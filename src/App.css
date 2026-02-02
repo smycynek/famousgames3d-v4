@@ -1,0 +1,121 @@
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+  background-color: #f5f5dc;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+h1 {
+  margin: 0;
+  color: #000000;
+  font-size: 1.5rem;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.controls select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 2px solid #555;
+  background-color: #f5f5dc;
+  color: #000000;
+  cursor: pointer;
+}
+
+.controls select:hover {
+  border-color: #777;
+}
+
+.controls select option {
+  background-color: #f5f5dc;
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.playback-controls button {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.2rem;
+  border-radius: 4px;
+  border: 2px solid #555;
+  background-color: transparent;
+  color: #000000;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playback-controls button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: #777;
+}
+
+.playback-controls button:active {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.move-counter {
+  color: #000000;
+  font-family: inherit;
+  text-align: center;
+}
+
+.final-score {
+  color: #000000;
+  font-family: inherit;
+  text-align: center;
+}
+
+.button-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  vertical-align: middle;
+}
+
+.chessboard-container {
+  width: 100%;
+  max-width: 800px;
+  height: 50vh;
+  border-radius: 8px;
+  border: 1px solid #5552;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .chessboard-container {
+    max-width: 1200px;
+    height: 55vh;
+  }
+}
+
+@media (min-width: 1440px) {
+  .chessboard-container {
+    max-width: 1400px;
+    height: 60vh;
+  }
+}
