@@ -143,13 +143,16 @@ function App() {
       )}
       <Chessboard game={selectedGame()} moveIndex={moveIndex()} />
 
-      <div class="notes">Vibe-coded in Claude code. Pieces modeled in Onshape.</div>
+      <div class="notes">
+        Developed with <a href="https://claude.ai/new">Claude Code.</a> Pieces modeled in{' '}
+        <a href="https://www.onshape.com/en/">Onshape</a>
+      </div>
       <a
         class="notes"
-        href="https://stevenvictor.net"
+        href="https://github.com/smycynek/famousgames3d-v4"
         style={{ 'text-align': 'left', display: 'block', color: 'black' }}
       >
-        stevenvictor.net
+        https://github.com/smycynek/famousgames3d-v4
       </a>
     </div>
   );
