@@ -5,7 +5,7 @@ A vibe-coding experiment with Claude Code
 Steve Mycynek 2026
 
 A few years ago, I created a site to replay famous chess games
-at https://stevenvictor.net/famousgames3d.
+at https://stevenvictor.net/famousgames3d. (This is the old site -- the new one is below)
 
 I wrote manually it with Angular, ThreeJs, TweenJs, and a pgn game notation parser.
 I managed all the animation and chess moves myself.  The result was decent,
@@ -17,12 +17,16 @@ I recently decided that it was the perfect opportunity to try out Claude Code to
 
 
 ## Building and running
+
 `bun install`
+
 `bun run build`
+
 `bun run dev`
 
 
-Live demo at https://stevenvictor.net/famousgames3d-v4
+## Live demo
+https://stevenvictor.net/famousgames3d-v4
 
 
 
