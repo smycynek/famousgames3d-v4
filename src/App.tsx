@@ -7,6 +7,8 @@ import playIcon from './assets/icons/play.svg';
 import resetIcon from './assets/icons/reset.svg';
 import forwardIcon from './assets/icons/forward.svg';
 import backIcon from './assets/icons/back.svg';
+import whiteKingIcon from './assets/icons/whiteKing.svg';
+import blackKingIcon from './assets/icons/blackKing.svg';
 
 function App() {
   const [selectedGame, setSelectedGame] = createSignal<ParsedGame | null>(games[0] || null);
@@ -59,7 +61,8 @@ function App() {
       setMoveIndex(-1);
     }
 
-    playIntervalId = setInterval(() => {
+    // Start the first move with a shorter delay
+    setTimeout(() => {
       setMoveIndex((prev) => {
         const next = prev + 1;
         if (next >= totalMoves) {
@@ -68,7 +71,19 @@ function App() {
         }
         return next;
       });
-    }, 1500) as unknown as number;
+
+      // Then continue with regular interval for subsequent moves
+      playIntervalId = setInterval(() => {
+        setMoveIndex((prev) => {
+          const next = prev + 1;
+          if (next >= totalMoves) {
+            stopPlayback();
+            return prev;
+          }
+          return next;
+        });
+      }, 1500) as unknown as number;
+    }, 300);
   };
 
   const handleReset = () => {
@@ -94,7 +109,7 @@ function App() {
   return (
     <div class="app">
       <h1>FAMOUS GAMES 3D</h1>
-      <label style={{ color: 'black' }} for="game-select">
+      <label style={{ color: 'black', 'font-size': '0.85rem' }} for="game-select">
         Select a game and hit 'Play.''
       </label>
       <div class="controls">
@@ -129,15 +144,38 @@ function App() {
               <img src={forwardIcon} alt="Forward" class="button-icon" />
             </button>
           </div>
-          <div class="move-counter">
-            Move: {String(moveIndex() + 1).padStart(3, '0')} /{' '}
-            {String(getTotalMoves()).padStart(3, '0')}
-          </div>
-          <div class="final-score">
-            Score:{' '}
-            {moveIndex() >= getTotalMoves() - 1
-              ? selectedGame()?.parsed[0]?.tags?.Result || '?'
-              : '?'}
+          <div
+            class="move-counter"
+            style={{
+              display: 'flex',
+              'align-items': 'center',
+              'justify-content': 'center',
+              'min-height': '36px',
+            }}
+          >
+            <span style={{ width: '40px', display: 'inline-block', 'text-align': 'right' }}>
+              {!isPlaying() && (
+                <img
+                  src={(moveIndex() + 1) % 2 === 0 ? whiteKingIcon : blackKingIcon}
+                  alt={(moveIndex() + 1) % 2 === 0 ? 'White to move' : 'Black to move'}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    'vertical-align': 'middle',
+                  }}
+                />
+              )}
+            </span>
+            <span style={{ 'text-align': 'left' }}>
+              Move: {String(moveIndex() + 1).padStart(3, '0')} /{' '}
+              {String(getTotalMoves()).padStart(3, '0')}
+              <span style={{ 'margin-left': '1rem' }}>
+                Score:{' '}
+                {moveIndex() >= getTotalMoves() - 1
+                  ? selectedGame()?.parsed[0]?.tags?.Result || '?'
+                  : '?'}
+              </span>
+            </span>
           </div>
         </>
       )}

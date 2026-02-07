@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 // Colors
-export const WHITE_PIECE_COLOR = 0xcccccc; // Light grey
-export const BLACK_PIECE_COLOR = 0x8f7b6f; // Brown (lighter)
+export const WHITE_PIECE_COLOR = 0xfff0d8; // Ivory tint
+export const BLACK_PIECE_COLOR = 0x888080; // Darker tint with black
 export const SCENE_BACKGROUND_COLOR = 0xf5f5dc; // Beige
 export const SCENE_BACKGROUND_COLOR_2 = 0x8f7b6f; // Beige
 export const LABEL_TEXT_COLOR = '#ffd700';
@@ -11,9 +11,9 @@ export const LABEL_TEXT_COLOR = '#ffd700';
 const TEXTURE_BASE_PATH = import.meta.env.BASE_URL + 'textures/';
 
 export const TEXTURE_PATHS = {
-  whiteMarble: TEXTURE_BASE_PATH + 'whiteMarble.jpg',
-  brownMarble: TEXTURE_BASE_PATH + 'brownMarble.jpg',
-  redWood: TEXTURE_BASE_PATH + 'redWood.jpg',
+  lightWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_229M.jpg',
+  darkWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_233M.jpg',
+  redWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_187S.jpg',
   whiteGranite: TEXTURE_BASE_PATH + 'whiteGranite.jpg',
   blueGranite: TEXTURE_BASE_PATH + 'blueGranite.jpg',
 } as const;
@@ -26,8 +26,8 @@ export const PIECE_MATERIAL_PROPS = {
 
 // Loaded textures interface
 export interface LoadedTextures {
-  whiteMarble: THREE.Texture;
-  brownMarble: THREE.Texture;
+  lightWood: THREE.Texture;
+  darkWood: THREE.Texture;
   redWood: THREE.Texture;
   whiteGranite: THREE.Texture;
   blueGranite: THREE.Texture;
@@ -36,10 +36,22 @@ export interface LoadedTextures {
 // Load all textures
 export function loadTextures(): LoadedTextures {
   const loader = new THREE.TextureLoader();
+  const lightWood = loader.load(TEXTURE_PATHS.lightWood);
+  lightWood.wrapS = THREE.RepeatWrapping;
+  lightWood.wrapT = THREE.RepeatWrapping;
+  lightWood.repeat.set(1.6, 1.6);
+  const darkWood = loader.load(TEXTURE_PATHS.darkWood);
+  darkWood.wrapS = THREE.RepeatWrapping;
+  darkWood.wrapT = THREE.RepeatWrapping;
+  darkWood.repeat.set(2.0, 2.0);
+  const redWood = loader.load(TEXTURE_PATHS.redWood);
+  redWood.wrapS = THREE.RepeatWrapping;
+  redWood.wrapT = THREE.RepeatWrapping;
+  redWood.repeat.set(0.125, 0.125);
   return {
-    whiteMarble: loader.load(TEXTURE_PATHS.whiteMarble),
-    brownMarble: loader.load(TEXTURE_PATHS.brownMarble),
-    redWood: loader.load(TEXTURE_PATHS.redWood),
+    lightWood,
+    darkWood,
+    redWood,
     whiteGranite: loader.load(TEXTURE_PATHS.whiteGranite),
     blueGranite: loader.load(TEXTURE_PATHS.blueGranite),
   };
@@ -102,9 +114,13 @@ export function createSquareMaterials(textures: LoadedTextures): {
 
 // Create base material
 export function createBaseMaterial(textures: LoadedTextures): THREE.MeshStandardMaterial {
+  const rotatedTexture = textures.redWood.clone();
+  rotatedTexture.center.set(0.5, 0.5);
+  rotatedTexture.rotation = Math.PI / 4; // 45 degrees
+  rotatedTexture.needsUpdate = true;
   return new THREE.MeshStandardMaterial({
-    map: textures.redWood,
-    color: 0xffcccc,
+    map: rotatedTexture,
+    color: 0xffbbaa,
     metalness: 0.05,
     roughness: 0.4,
   });
