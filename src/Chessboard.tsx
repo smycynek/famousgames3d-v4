@@ -28,7 +28,7 @@ const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 const PIECE_TYPES = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'] as const;
 const PIECE_BASE_SIZE = SQUARE_SIZE * 0.6 * 2 * 0.8; // 60% of square width, scaled
-const ANIMATION_DURATION = 0.5; // seconds
+const ANIMATION_DURATION = 1.0; // seconds
 const KNIGHT_HOP_HEIGHT = 1.5; // how high knights jump
 type PieceType = (typeof PIECE_TYPES)[number];
 type PieceModels = Record<PieceType, THREE.Group>;
@@ -71,8 +71,10 @@ function createPieceInstance(
   const material = new THREE.MeshStandardMaterial({
     color,
     map: texture,
-    metalness: 0.1,
-    roughness: 0.1,
+    metalness: 0.05,
+    roughness: 0.25,
+    transparent: false,
+    opacity: 1,
   });
   disposables.push(material);
 
@@ -160,21 +162,21 @@ function Chessboard(props: ChessboardProps) {
     // Scale factors for different piece types
     const getScale = (pieceType: PieceType): number => {
       if (pieceType === 'queen') {
-        return 1.4641 * 1.07;
+        return 1.4641 * 1.07 * 1.05 * 1.05;
       }
       if (pieceType === 'king') {
-        return 1.4641 * 1.07 * 1.02 * 1.03;
+        return 1.4641 * 1.07 * 1.02 * 1.03 * 1.05 * 1.05;
       }
       if (pieceType === 'bishop') {
-        return 1.4641 * 1.07 * 0.9;
+        return 1.4641 * 1.07 * 0.9 * 1.05 * 1.05;
       }
       if (pieceType === 'knight') {
-        return 1.07;
+        return 1.07 * 1.05 * 1.05;
       }
       if (pieceType === 'pawn') {
-        return 0.825 * 1.1;
+        return 0.825 * 1.1 * 1.03 * 1.03;
       }
-      return 1;
+      return 1.05 * 1.05; // rook
     };
 
     // Clear all pieces from the board
@@ -193,7 +195,7 @@ function Chessboard(props: ChessboardProps) {
       row: number,
       isBlack: boolean
     ): PieceInfo => {
-      const texture = isBlack ? loadedTextures?.brownMarble : loadedTextures?.whiteMarble;
+      const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
       const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
       const piece = createPieceInstance(
         pm[pieceType],
@@ -255,18 +257,49 @@ function Chessboard(props: ChessboardProps) {
       }
     };
 
-    // Remove a piece with optional animation
-    const removePiece = (squareName: string, animate: boolean = false) => {
+    // Remove a piece with optional animation and delay
+    const removePiece = (squareName: string, animate: boolean = false, delay: number = 0) => {
       const info = piecesBySquare.get(squareName);
       if (info) {
         if (animate) {
-          // Fade out captured piece
-          gsap.to(info.mesh.scale, {
+          // Animate captured piece: raise up one square height and rotate 45 degrees
+          gsap.to(info.mesh.position, {
             duration: ANIMATION_DURATION * 0.5,
-            x: 0,
-            y: 0,
-            z: 0,
+            delay: delay,
+            y: info.mesh.position.y + SQUARE_SIZE,
+            ease: 'power2.out',
+          });
+          gsap.to(info.mesh.rotation, {
+            duration: ANIMATION_DURATION * 0.5,
+            delay: delay,
+            y: info.mesh.rotation.y + Math.PI / 4,
+            ease: 'power2.out',
+          });
+          // Remove texture and fade out captured piece to transparent
+          const materials: THREE.Material[] = [];
+          const opacityProxy = { value: 1 };
+          gsap.to(opacityProxy, {
+            duration: ANIMATION_DURATION * 0.5,
+            delay: delay,
+            value: 0,
             ease: 'power2.in',
+            onStart: () => {
+              // Remove texture when animation starts (after delay)
+              info.mesh.traverse((child) => {
+                if (child instanceof THREE.Mesh && child.material) {
+                  const mat = child.material as THREE.MeshStandardMaterial;
+                  mat.map = null;
+                  mat.needsUpdate = true;
+                  mat.transparent = true;
+                  materials.push(mat);
+                }
+              });
+            },
+            onUpdate: () => {
+              materials.forEach((mat) => {
+                mat.opacity = opacityProxy.value;
+              });
+            },
             onComplete: () => {
               scene.remove(info.mesh);
             },
@@ -311,14 +344,15 @@ function Chessboard(props: ChessboardProps) {
       const { col: toCol, row: toRow } = fromSquareName(toSquare);
       const isKnight = move.piece === 'n';
 
-      // Handle capture - remove the captured piece
+      // Handle capture - remove the captured piece with a slight delay
       if (move.captured) {
+        const captureDelay = ANIMATION_DURATION * 0.6;
         // For en passant, the captured pawn is on a different square
         if (move.flags.includes('e')) {
           const capturedSquare = `${toSquare[0]}${fromSquare[1]}`;
-          removePiece(capturedSquare, true);
+          removePiece(capturedSquare, true, captureDelay);
         } else {
-          removePiece(toSquare, true);
+          removePiece(toSquare, true, captureDelay);
         }
       }
 
@@ -356,6 +390,28 @@ function Chessboard(props: ChessboardProps) {
           removePiece(toSquare, false);
           const newPieceInfo = createPiece(pm, promotedType, toCol, toRow, isBlack);
           piecesBySquare.set(toSquare, newPieceInfo);
+
+          // Brief brightness boost for promoted piece
+          const materials: THREE.MeshStandardMaterial[] = [];
+          newPieceInfo.mesh.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.material) {
+              const mat = child.material as THREE.MeshStandardMaterial;
+              mat.emissive = new THREE.Color(0xffffff);
+              mat.emissiveIntensity = 0.5;
+              materials.push(mat);
+            }
+          });
+          const brightnessProxy = { value: 0.5 };
+          gsap.to(brightnessProxy, {
+            duration: 0.5,
+            value: 0,
+            ease: 'power2.out',
+            onUpdate: () => {
+              materials.forEach((mat) => {
+                mat.emissiveIntensity = brightnessProxy.value;
+              });
+            },
+          });
         }, ANIMATION_DURATION * 1000);
       }
 
@@ -489,16 +545,31 @@ function Chessboard(props: ChessboardProps) {
     const lights = buildLights();
     lights.forEach((light) => scene.add(light));
 
-    // Create base
+    // Create base with beveled edges
     const baseWidth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
     const baseDepth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
-    const baseGeometry = new THREE.BoxGeometry(baseWidth, BASE_HEIGHT, baseDepth);
+    const bevelSize = 0.05;
+    const baseShape = new THREE.Shape();
+    baseShape.moveTo(-baseWidth / 2, -baseDepth / 2);
+    baseShape.lineTo(baseWidth / 2, -baseDepth / 2);
+    baseShape.lineTo(baseWidth / 2, baseDepth / 2);
+    baseShape.lineTo(-baseWidth / 2, baseDepth / 2);
+    baseShape.lineTo(-baseWidth / 2, -baseDepth / 2);
+    const extrudeSettings = {
+      depth: BASE_HEIGHT,
+      bevelEnabled: true,
+      bevelThickness: bevelSize,
+      bevelSize: bevelSize,
+      bevelSegments: 2,
+    };
+    const baseGeometry = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
+    baseGeometry.rotateX(-Math.PI / 2);
     const baseMaterial = createBaseMaterial(loadedTextures!);
     disposables.push(baseMaterial);
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
     base.position.set(
       (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2,
-      -SQUARE_HEIGHT / 2 - BASE_HEIGHT / 2,
+      -SQUARE_HEIGHT / 2 - BASE_HEIGHT - bevelSize,
       (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2
     );
     base.receiveShadow = true;
@@ -512,7 +583,35 @@ function Chessboard(props: ChessboardProps) {
     for (let row = 0; row < BOARD_SIZE; row++) {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const isLight = (row + col) % 2 === 0;
-        const material = isLight ? squareMaterials.light : squareMaterials.dark;
+        let material;
+        if (isLight) {
+          // Create unique material with randomly rotated texture for each light square
+          const rotatedTexture = loadedTextures!.whiteGranite.clone();
+          rotatedTexture.center.set(0.5, 0.5);
+          rotatedTexture.rotation = Math.random() * Math.PI * 2;
+          rotatedTexture.needsUpdate = true;
+          material = new THREE.MeshStandardMaterial({
+            map: rotatedTexture,
+            color: 0xffffff,
+            emissive: 0x444444,
+            metalness: 0.05,
+            roughness: 0.3,
+          });
+          disposables.push(material);
+        } else {
+          // Create unique material with randomly rotated texture for each dark square
+          const rotatedTexture = loadedTextures!.blueGranite.clone();
+          rotatedTexture.center.set(0.5, 0.5);
+          rotatedTexture.rotation = Math.random() * Math.PI * 2;
+          rotatedTexture.needsUpdate = true;
+          material = new THREE.MeshStandardMaterial({
+            map: rotatedTexture,
+            color: 0xccccee,
+            metalness: 0.05,
+            roughness: 0.3,
+          });
+          disposables.push(material);
+        }
         const square = new THREE.Mesh(squareGeometry, material);
 
         square.position.set(col * SQUARE_SIZE, 0, row * SQUARE_SIZE);

@@ -12,6 +12,7 @@ import game1011478 from './game_1011478.pgn?raw';
 import game1019060 from './game_1019060.pgn?raw';
 import game1031957 from './game_1031957.pgn?raw';
 import game1233404 from './game_1233404.pgn?raw';
+import game1769541 from './game_1769541.pgn?raw';
 
 export interface ParsedGame {
   name: string;
@@ -32,6 +33,7 @@ function parseGame(name: string, pgnContent: string): ParsedGame {
 // Export parsed games
 export const games: ParsedGame[] = [
   parseGame('game_1233404', game1233404),
+  parseGame('game_1769541', game1769541),
   parseGame('game_1011478', game1011478),
   parseGame('game_1019060', game1019060),
   parseGame('game_1031957', game1031957),
