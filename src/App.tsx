@@ -108,24 +108,23 @@ function App() {
 
   return (
     <div class="app">
-      <h1>FAMOUS GAMES 3D</h1>
-      <label style={{ color: 'black', 'font-size': '0.85rem' }} for="game-select">
-        Select a game and hit 'Play.''
-      </label>
-      <div class="controls">
-        <select id="game-select" onChange={handleGameSelect} value={selectedGame()?.name}>
-          <For each={games}>
-            {(game) => (
-              <option value={game.name}>
-                {game.parsed[0]?.tags?.White || 'Unknown'} Vs.{' '}
-                {game.parsed[0]?.tags?.Black || 'Unknown'}
-              </option>
-            )}
-          </For>
-        </select>
+      <div class="header-row">
+        <h1>FAMOUS GAMES 3D</h1>
+        <div class="controls">
+          <select id="game-select" onChange={handleGameSelect} value={selectedGame()?.name}>
+            <For each={games}>
+              {(game) => (
+                <option value={game.name}>
+                  {game.parsed[0]?.tags?.White || 'Unknown'} Vs.{' '}
+                  {game.parsed[0]?.tags?.Black || 'Unknown'}
+                </option>
+              )}
+            </For>
+          </select>
+        </div>
       </div>
       {selectedGame() && (
-        <>
+        <div class="controls-row">
           <div class="playback-controls">
             <button onClick={handleReset} title="Reset">
               <img src={resetIcon} alt="Reset" class="button-icon" />
@@ -144,47 +143,27 @@ function App() {
               <img src={forwardIcon} alt="Forward" class="button-icon" />
             </button>
           </div>
-          <div
-            class="move-counter"
-            style={{
-              display: 'flex',
-              'align-items': 'center',
-              'justify-content': 'center',
-              'min-height': '36px',
-            }}
-          >
-            <span style={{ width: '40px', display: 'inline-block', 'text-align': 'right' }}>
-              {!isPlaying() && (
-                <img
-                  src={(moveIndex() + 1) % 2 === 0 ? whiteKingIcon : blackKingIcon}
-                  alt={(moveIndex() + 1) % 2 === 0 ? 'White to move' : 'Black to move'}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    'vertical-align': 'middle',
-                  }}
-                />
-              )}
-            </span>
-            <span style={{ 'text-align': 'left' }}>
-              Move: {String(moveIndex() + 1).padStart(3, '0')} /{' '}
-              {String(getTotalMoves()).padStart(3, '0')}
-              <span style={{ 'margin-left': '1rem' }}>
-                Score:{' '}
-                {moveIndex() >= getTotalMoves() - 1
-                  ? selectedGame()?.parsed[0]?.tags?.Result || '?'
-                  : '?'}
-              </span>
-            </span>
-          </div>
-        </>
+          <span class="turn-icon">
+            {!isPlaying() && (
+              <img
+                src={(moveIndex() + 1) % 2 === 0 ? whiteKingIcon : blackKingIcon}
+                alt={(moveIndex() + 1) % 2 === 0 ? 'White to move' : 'Black to move'}
+              />
+            )}
+          </span>
+          <span class="move-counter">
+            Move: {String(moveIndex() + 1).padStart(3, '0')} /{' '}
+            {String(getTotalMoves()).padStart(3, '0')}
+          </span>
+          <span class="score">
+            Score:{' '}
+            {moveIndex() >= getTotalMoves() - 1
+              ? selectedGame()?.parsed[0]?.tags?.Result || '?'
+              : '?'}
+          </span>
+        </div>
       )}
       <Chessboard game={selectedGame()} moveIndex={moveIndex()} />
-
-      <div class="notes">
-        Developed with <a href="https://claude.ai/new">Claude Code.</a> Pieces modeled in{' '}
-        <a href="https://www.onshape.com/en/">Onshape</a>
-      </div>
       <a
         class="notes"
         href="https://github.com/smycynek/famousgames3d-v4"
