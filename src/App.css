@@ -12,20 +12,28 @@
 .app {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.2rem;
 }
 
 h1 {
   margin: 0;
   color: #000000;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
 }
 
 .controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.2rem;
   flex-wrap: wrap;
 }
 
@@ -47,11 +55,19 @@ h1 {
   background-color: #f5f5dc;
 }
 
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
 .playback-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.2rem;
 }
 
 .playback-controls button {
@@ -78,16 +94,27 @@ h1 {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+.turn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turn-icon img {
+  width: 32px;
+  height: 32px;
+}
+
 .move-counter {
   color: #000000;
   font-family: inherit;
-  text-align: center;
 }
 
-.final-score {
+.score {
   color: #000000;
   font-family: inherit;
-  text-align: center;
 }
 
 .button-icon {
@@ -99,7 +126,7 @@ h1 {
 .chessboard-container {
   width: 100%;
   max-width: 800px;
-  height: 50vh;
+  height: 66.5vh;
   border-radius: 8px;
   border: 1px solid #5552;
   overflow: hidden;
@@ -109,13 +136,13 @@ h1 {
 @media (min-width: 1024px) {
   .chessboard-container {
     max-width: 1200px;
-    height: 55vh;
+    height: 73vh;
   }
 }
 
 @media (min-width: 1440px) {
   .chessboard-container {
     max-width: 1400px;
-    height: 60vh;
+    height: 80vh;
   }
 }

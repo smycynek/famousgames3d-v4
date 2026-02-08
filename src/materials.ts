@@ -3,9 +3,9 @@ import * as THREE from 'three';
 // Colors
 export const WHITE_PIECE_COLOR = 0xfff0d8; // Ivory tint
 export const BLACK_PIECE_COLOR = 0x888080; // Darker tint with black
-export const SCENE_BACKGROUND_COLOR = 0xf5f5dc; // Beige
+export const SCENE_BACKGROUND_COLOR = 0x000005; // Near black
 export const SCENE_BACKGROUND_COLOR_2 = 0x8f7b6f; // Beige
-export const LABEL_TEXT_COLOR = '#ffd700';
+export const LABEL_TEXT_COLOR = '#aa7700';
 
 // Texture paths
 const TEXTURE_BASE_PATH = import.meta.env.BASE_URL + 'textures/';
@@ -16,6 +16,7 @@ export const TEXTURE_PATHS = {
   redWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_187S.jpg',
   whiteGranite: TEXTURE_BASE_PATH + 'whiteGranite.jpg',
   blueGranite: TEXTURE_BASE_PATH + 'blueGranite.jpg',
+  stone: TEXTURE_BASE_PATH + 'Texturelabs_Stone_134M.jpg',
 } as const;
 
 // Material properties
@@ -31,6 +32,7 @@ export interface LoadedTextures {
   redWood: THREE.Texture;
   whiteGranite: THREE.Texture;
   blueGranite: THREE.Texture;
+  stone: THREE.Texture;
 }
 
 // Load all textures
@@ -54,10 +56,17 @@ export function loadTextures(): LoadedTextures {
     redWood,
     whiteGranite: loader.load(TEXTURE_PATHS.whiteGranite),
     blueGranite: loader.load(TEXTURE_PATHS.blueGranite),
+    stone: (() => {
+      const tex = loader.load(TEXTURE_PATHS.stone);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(0.1, 0.1);
+      return tex;
+    })(),
   };
 }
 
-// Create text texture for labels
+// Create text texture for labels with speckled gold effect
 export function createTextTexture(text: string): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
@@ -67,11 +76,26 @@ export function createTextTexture(text: string): THREE.CanvasTexture {
   ctx.fillStyle = 'transparent';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Draw text with base gold color
   ctx.fillStyle = LABEL_TEXT_COLOR;
   ctx.font = 'bold 96px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  // Add speckled gold effect
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    // Only modify non-transparent pixels (the text)
+    if (data[i + 3] > 0) {
+      const speckle = Math.random() * 160 - 80; // Random variation -80 to +80
+      data[i] = Math.min(255, Math.max(0, data[i] + speckle)); // R
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + speckle * 0.7)); // G
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + speckle * 0.3)); // B
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;

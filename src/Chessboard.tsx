@@ -16,13 +16,16 @@ import {
   createLabelMaterial,
   type LoadedTextures,
   SCENE_BACKGROUND_COLOR,
+  SCENE_BACKGROUND_COLOR_2,
 } from './materials';
 
 const BOARD_SIZE = 8;
 const SQUARE_SIZE = 1;
 const SQUARE_HEIGHT = 0.1;
-const BASE_HEIGHT = 0.2;
+const BASE_HEIGHT = 0.4;
 const MARGIN = 0.6;
+const BEVEL_SIZE = 0.35;
+const TABLE_HEIGHT = BASE_HEIGHT * 5;
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -42,6 +45,28 @@ const PIECE_TYPE_MAP: Record<string, PieceType> = {
   q: 'queen',
   k: 'king',
 };
+
+// Create gradient background texture
+function createGradientBackground(topColor: number, bottomColor: number): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+
+  const topColorStr = '#' + topColor.toString(16).padStart(6, '0');
+  const bottomColorStr = '#' + bottomColor.toString(16).padStart(6, '0');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, topColorStr);
+  gradient.addColorStop(1, bottomColorStr);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
 
 interface ChessboardProps {
   game?: ParsedGame | null;
@@ -179,12 +204,20 @@ function Chessboard(props: ChessboardProps) {
       return 1.05 * 1.05; // rook
     };
 
+    // Track captured pieces
+    const capturedWhitePieces: THREE.Group[] = [];
+    const capturedBlackPieces: THREE.Group[] = [];
+
     // Clear all pieces from the board
     const clearAllPieces = () => {
       piecesBySquare.forEach((info) => {
         scene.remove(info.mesh);
       });
       piecesBySquare.clear();
+      capturedWhitePieces.forEach((mesh) => scene.remove(mesh));
+      capturedBlackPieces.forEach((mesh) => scene.remove(mesh));
+      capturedWhitePieces.length = 0;
+      capturedBlackPieces.length = 0;
     };
 
     // Create and place a single piece on the board
@@ -257,52 +290,47 @@ function Chessboard(props: ChessboardProps) {
       }
     };
 
-    // Remove a piece with optional animation and delay
+    // Remove a piece with optional animation and delay - moves captured pieces to the side
     const removePiece = (squareName: string, animate: boolean = false, delay: number = 0) => {
       const info = piecesBySquare.get(squareName);
       if (info) {
         if (animate) {
-          // Animate captured piece: raise up one square height and rotate 45 degrees
+          // Determine which side to place the captured piece
+          const capturedList = info.isBlack ? capturedBlackPieces : capturedWhitePieces;
+          const captureIndex = capturedList.length;
+          capturedList.push(info.mesh);
+
+          // Calculate target position on the side of the board
+          // White pieces (captured by black) go on the right, black pieces go on the left
+          const sideX = info.isBlack
+            ? -SQUARE_SIZE * 2.5 // Left side for captured black pieces
+            : BOARD_SIZE * SQUARE_SIZE + SQUARE_SIZE * 1.5; // Right side for captured white pieces
+          const row = captureIndex % 8; // Wrap around after 8 pieces
+          const col = Math.floor(captureIndex / 8) * 1.0; // Stack in columns if more than 8
+          const targetX = sideX - (info.isBlack ? col : -col);
+          // Black pieces line up starting near rank 1 (white's side), white pieces near rank 8 (black's side)
+          const targetZ = info.isBlack ? (BOARD_SIZE - 1 - row) * SQUARE_SIZE : row * SQUARE_SIZE;
+          const targetY = -SQUARE_HEIGHT / 2 - BASE_HEIGHT - BEVEL_SIZE * 2 + BEVEL_SIZE; // Rest on the table
+
+          // Animate captured piece: raise up quickly and high to avoid collision, move to side, then lower
+          gsap.to(info.mesh.position, {
+            duration: ANIMATION_DURATION * 0.2,
+            delay: delay,
+            y: info.mesh.position.y + SQUARE_SIZE * 3,
+            ease: 'power2.out',
+          });
           gsap.to(info.mesh.position, {
             duration: ANIMATION_DURATION * 0.5,
-            delay: delay,
-            y: info.mesh.position.y + SQUARE_SIZE,
-            ease: 'power2.out',
+            delay: delay + ANIMATION_DURATION * 0.2,
+            x: targetX,
+            z: targetZ,
+            ease: 'power2.inOut',
           });
-          gsap.to(info.mesh.rotation, {
-            duration: ANIMATION_DURATION * 0.5,
-            delay: delay,
-            y: info.mesh.rotation.y + Math.PI / 4,
-            ease: 'power2.out',
-          });
-          // Remove texture and fade out captured piece to transparent
-          const materials: THREE.Material[] = [];
-          const opacityProxy = { value: 1 };
-          gsap.to(opacityProxy, {
-            duration: ANIMATION_DURATION * 0.5,
-            delay: delay,
-            value: 0,
+          gsap.to(info.mesh.position, {
+            duration: ANIMATION_DURATION * 0.3,
+            delay: delay + ANIMATION_DURATION * 0.7,
+            y: targetY,
             ease: 'power2.in',
-            onStart: () => {
-              // Remove texture when animation starts (after delay)
-              info.mesh.traverse((child) => {
-                if (child instanceof THREE.Mesh && child.material) {
-                  const mat = child.material as THREE.MeshStandardMaterial;
-                  mat.map = null;
-                  mat.needsUpdate = true;
-                  mat.transparent = true;
-                  materials.push(mat);
-                }
-              });
-            },
-            onUpdate: () => {
-              materials.forEach((mat) => {
-                mat.opacity = opacityProxy.value;
-              });
-            },
-            onComplete: () => {
-              scene.remove(info.mesh);
-            },
           });
         } else {
           scene.remove(info.mesh);
@@ -344,9 +372,9 @@ function Chessboard(props: ChessboardProps) {
       const { col: toCol, row: toRow } = fromSquareName(toSquare);
       const isKnight = move.piece === 'n';
 
-      // Handle capture - remove the captured piece with a slight delay
+      // Handle capture - remove the captured piece immediately so it clears the square
       if (move.captured) {
-        const captureDelay = ANIMATION_DURATION * 0.6;
+        const captureDelay = 0;
         // For en passant, the captured pawn is on a different square
         if (move.flags.includes('e')) {
           const capturedSquare = `${toSquare[0]}${fromSquare[1]}`;
@@ -508,17 +536,24 @@ function Chessboard(props: ChessboardProps) {
     });
 
     loadPieces();
-    scene.background = new THREE.Color(SCENE_BACKGROUND_COLOR);
+    const gradientBackground = createGradientBackground(
+      SCENE_BACKGROUND_COLOR,
+      SCENE_BACKGROUND_COLOR_2
+    );
+    scene.background = gradientBackground;
+    textureList.push(gradientBackground);
 
     // Camera setup
     const isMobile = containerRef.clientWidth < 768;
+    const isPortrait = containerRef.clientHeight > containerRef.clientWidth;
     const camera = new THREE.PerspectiveCamera(
       50,
       containerRef.clientWidth / containerRef.clientHeight,
       0.1,
       1000
     );
-    camera.position.set(3.5, isMobile ? 12 : 6, isMobile ? 12 : 12);
+    const mobileZ = isMobile && isPortrait ? 18 : 10;
+    camera.position.set(3.5, isMobile ? 7 : 4, isMobile ? mobileZ : 12);
     camera.lookAt(3.5, 0, 3.5);
 
     // Renderer setup
@@ -548,7 +583,6 @@ function Chessboard(props: ChessboardProps) {
     // Create base with beveled edges
     const baseWidth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
     const baseDepth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
-    const bevelSize = 0.05;
     const baseShape = new THREE.Shape();
     baseShape.moveTo(-baseWidth / 2, -baseDepth / 2);
     baseShape.lineTo(baseWidth / 2, -baseDepth / 2);
@@ -558,8 +592,8 @@ function Chessboard(props: ChessboardProps) {
     const extrudeSettings = {
       depth: BASE_HEIGHT,
       bevelEnabled: true,
-      bevelThickness: bevelSize,
-      bevelSize: bevelSize,
+      bevelThickness: BEVEL_SIZE,
+      bevelSize: BEVEL_SIZE,
       bevelSegments: 2,
     };
     const baseGeometry = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
@@ -569,11 +603,46 @@ function Chessboard(props: ChessboardProps) {
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
     base.position.set(
       (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2,
-      -SQUARE_HEIGHT / 2 - BASE_HEIGHT - bevelSize,
+      -SQUARE_HEIGHT / 2 - BASE_HEIGHT - BEVEL_SIZE,
       (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2
     );
     base.receiveShadow = true;
     scene.add(base);
+
+    // Create table under the base with beveled edges
+    const tableWidth = baseWidth * 1.65;
+    const tableDepth = baseDepth * 1.265;
+    const tableShape = new THREE.Shape();
+    tableShape.moveTo(-tableWidth / 2, -tableDepth / 2);
+    tableShape.lineTo(tableWidth / 2, -tableDepth / 2);
+    tableShape.lineTo(tableWidth / 2, tableDepth / 2);
+    tableShape.lineTo(-tableWidth / 2, tableDepth / 2);
+    tableShape.lineTo(-tableWidth / 2, -tableDepth / 2);
+    const tableExtrudeSettings = {
+      depth: TABLE_HEIGHT,
+      bevelEnabled: true,
+      bevelThickness: BEVEL_SIZE,
+      BEVEL_SIZE: BEVEL_SIZE,
+      bevelSegments: 2,
+    };
+    const tableGeometry = new THREE.ExtrudeGeometry(tableShape, tableExtrudeSettings);
+    tableGeometry.rotateX(-Math.PI / 2);
+    const tableMaterial = new THREE.MeshStandardMaterial({
+      map: loadedTextures!.stone,
+      color: 0xffffff,
+      metalness: 0.1,
+      roughness: 0.5,
+    });
+    disposables.push(tableMaterial);
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    table.position.set(
+      (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2,
+      -SQUARE_HEIGHT / 2 - BASE_HEIGHT - BEVEL_SIZE * 2 - TABLE_HEIGHT,
+      (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2
+    );
+    table.receiveShadow = true;
+    table.castShadow = true;
+    scene.add(table);
 
     // Create chessboard squares
     const squareMaterials = createSquareMaterials(loadedTextures!);
