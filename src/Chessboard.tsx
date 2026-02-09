@@ -314,21 +314,21 @@ function Chessboard(props: ChessboardProps) {
 
           // Animate captured piece: raise up quickly and high to avoid collision, move to side, then lower
           gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.2,
+            duration: ANIMATION_DURATION * 0.4,
             delay: delay,
-            y: info.mesh.position.y + SQUARE_SIZE * 3,
+            y: info.mesh.position.y + SQUARE_SIZE * 2.1,
             ease: 'power2.out',
           });
           gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.5,
-            delay: delay + ANIMATION_DURATION * 0.2,
+            duration: ANIMATION_DURATION * 0.9,
+            delay: delay + ANIMATION_DURATION * 0.4,
             x: targetX,
             z: targetZ,
             ease: 'power2.inOut',
           });
           gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.3,
-            delay: delay + ANIMATION_DURATION * 0.7,
+            duration: ANIMATION_DURATION * 0.5,
+            delay: delay + ANIMATION_DURATION * 1.3,
             y: targetY,
             ease: 'power2.in',
           });
@@ -374,7 +374,7 @@ function Chessboard(props: ChessboardProps) {
 
       // Handle capture - remove the captured piece immediately so it clears the square
       if (move.captured) {
-        const captureDelay = 0;
+        const captureDelay = ANIMATION_DURATION * 0.6;
         // For en passant, the captured pawn is on a different square
         if (move.flags.includes('e')) {
           const capturedSquare = `${toSquare[0]}${fromSquare[1]}`;

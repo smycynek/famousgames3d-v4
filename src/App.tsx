@@ -1,7 +1,7 @@
 import { createSignal, For } from 'solid-js';
 import './App.css';
 import Chessboard from './Chessboard';
-import { games, type ParsedGame } from './assets/games';
+import { games, parseGame, type ParsedGame } from './assets/games';
 import pauseIcon from './assets/icons/pause.svg';
 import playIcon from './assets/icons/play.svg';
 import resetIcon from './assets/icons/reset.svg';
@@ -9,12 +9,17 @@ import forwardIcon from './assets/icons/forward.svg';
 import backIcon from './assets/icons/back.svg';
 import whiteKingIcon from './assets/icons/whiteKing.svg';
 import blackKingIcon from './assets/icons/blackKing.svg';
+import uploadIcon from './assets/icons/upload.svg';
+import infoIcon from './assets/icons/info.svg';
 
 function App() {
+  const [gameList, setGameList] = createSignal<ParsedGame[]>([...games]);
   const [selectedGame, setSelectedGame] = createSignal<ParsedGame | null>(games[0] || null);
   const [moveIndex, setMoveIndex] = createSignal(-1);
   const [isPlaying, setIsPlaying] = createSignal(false);
   let playIntervalId: number | undefined;
+  let fileInputRef: HTMLInputElement | undefined;
+  const [showAbout, setShowAbout] = createSignal(false);
 
   const handleGameSelect = (e: Event) => {
     const select = e.target as HTMLSelectElement;
@@ -22,7 +27,7 @@ function App() {
     stopPlayback();
     setMoveIndex(-1);
     if (gameName) {
-      const game = games.find((g) => g.name === gameName);
+      const game = gameList().find((g) => g.name === gameName);
       setSelectedGame(game || null);
       console.log('Selected game:', game?.parsed);
     } else {
@@ -106,13 +111,44 @@ function App() {
     }
   };
 
+  const handleUploadPgn = () => {
+    fileInputRef?.click();
+  };
+
+  const handleFileChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const pgnContent = reader.result as string;
+        const parsed = parseGame(file.name, pgnContent);
+        if (!parsed.parsed[0]?.moves?.length) {
+          throw new Error('No moves found');
+        }
+        setGameList((prev) => [...prev, parsed]);
+        stopPlayback();
+        setMoveIndex(-1);
+        setSelectedGame(parsed);
+      } catch {
+        alert('Error reading PGN');
+      }
+    };
+    reader.onerror = () => {
+      alert('Error reading PGN');
+    };
+    reader.readAsText(file);
+    input.value = '';
+  };
+
   return (
     <div class="app">
       <div class="header-row">
         <h1>FAMOUS GAMES 3D</h1>
         <div class="controls">
           <select id="game-select" onChange={handleGameSelect} value={selectedGame()?.name}>
-            <For each={games}>
+            <For each={gameList()}>
               {(game) => (
                 <option value={game.name}>
                   {game.parsed[0]?.tags?.White || 'Unknown'} Vs.{' '}
@@ -121,6 +157,16 @@ function App() {
               )}
             </For>
           </select>
+          <button class="upload-btn" onClick={handleUploadPgn} title="Upload a PGN">
+            <img src={uploadIcon} alt="Upload a PGN" class="button-icon" />
+          </button>
+          <input
+            type="file"
+            accept=".pgn"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
       {selectedGame() && (
@@ -144,7 +190,7 @@ function App() {
             </button>
           </div>
           <span class="turn-icon">
-            {!isPlaying() && (
+            {!isPlaying() && moveIndex() < getTotalMoves() - 1 && (
               <img
                 src={(moveIndex() + 1) % 2 === 0 ? whiteKingIcon : blackKingIcon}
                 alt={(moveIndex() + 1) % 2 === 0 ? 'White to move' : 'Black to move'}
@@ -152,25 +198,45 @@ function App() {
             )}
           </span>
           <span class="move-counter">
-            Move: {String(moveIndex() + 1).padStart(3, '0')} /{' '}
-            {String(getTotalMoves()).padStart(3, '0')}
+            {String(moveIndex() + 1).padStart(3, '0')}/{String(getTotalMoves()).padStart(3, '0')}
           </span>
           <span class="score">
-            Score:{' '}
             {moveIndex() >= getTotalMoves() - 1
-              ? selectedGame()?.parsed[0]?.tags?.Result || '?'
-              : '?'}
+              ? selectedGame()?.parsed[0]?.tags?.Result || '----'
+              : '----'}
           </span>
         </div>
       )}
       <Chessboard game={selectedGame()} moveIndex={moveIndex()} />
-      <a
-        class="notes"
-        href="https://github.com/smycynek/famousgames3d-v4"
-        style={{ 'text-align': 'left', display: 'block', color: 'black' }}
-      >
-        https://github.com/smycynek/famousgames3d-v4
-      </a>
+      <div class="footer-row">
+        <a
+          class="notes"
+          href="https://github.com/smycynek/famousgames3d-v4"
+          style={{ color: 'black' }}
+        >
+          https://github.com/smycynek/famousgames3d-v4
+        </a>
+        <button class="about-btn" onClick={() => setShowAbout(true)} title="About">
+          <img src={infoIcon} alt="About" class="button-icon" />
+        </button>
+      </div>
+      {showAbout() && (
+        <div class="about-overlay" onClick={() => setShowAbout(false)}>
+          <div class="about-dialog" onClick={(e) => e.stopPropagation()}>
+            <h1>ABOUT FAMOUS GAMES 3D</h1>
+            <p>
+              Play back famous chess games from history, or upload your own PGN files to visualize
+              them in 3D! Pieces modeled in Onshape. Gameplay in SolidJS, ThreeJS, and chess.js
+            </p>
+            <p class="credits">Copyright Steven Mycynek 2026. MIT license</p>
+            <div>
+              <button class="about-ok-btn" onClick={() => setShowAbout(false)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
