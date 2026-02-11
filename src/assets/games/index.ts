@@ -21,7 +21,7 @@ export interface ParsedGame {
 }
 
 // Parse PGN files at build time
-function parseGame(name: string, pgnContent: string): ParsedGame {
+export function parseGame(name: string, pgnContent: string): ParsedGame {
   const parsed = parse(pgnContent, { startRule: 'games' }) as ParseTree[];
   return {
     name,
