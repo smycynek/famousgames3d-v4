@@ -73,6 +73,7 @@ button:focus-visible {
   :root {
     color: #000000;
     background-color: #ffffff;
+    text-decoration: underline;
   }
   a:hover {
     color: #333333;

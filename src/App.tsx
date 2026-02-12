@@ -223,17 +223,24 @@ function App() {
       {showAbout() && (
         <div class="about-overlay" onClick={() => setShowAbout(false)}>
           <div class="about-dialog" onClick={(e) => e.stopPropagation()}>
-            <h1>ABOUT FAMOUS GAMES 3D</h1>
+            <h1 class="about-title">ABOUT FAMOUS GAMES 3D</h1>
             <p>
               Play back famous chess games from history, or upload your own PGN files to visualize
-              them in 3D! Pieces modeled in Onshape. Gameplay in SolidJS, ThreeJS, and chess.js
+              them in 3D! Pieces modeled in{' '}
+              <a href="https://cad.onshape.com/documents/1ac43c0042a8a0544e84feed/w/276b025152b1f726b298cef5/e/c3193025dfaf1a651f190a93">
+                Onshape.
+              </a>
+              <p>
+                Gameplay in <code>SolidJS</code>, <code>ThreeJS</code>, and <code>chess.js</code>.
+                PGN-parsing with <code>@mliebelt/pgn-parser. </code>
+                Animation with <code>gsap</code>.
+              </p>
             </p>
+
             <p class="credits">Copyright Steven Mycynek 2026. MIT license</p>
-            <div>
-              <button class="about-ok-btn" onClick={() => setShowAbout(false)}>
-                OK
-              </button>
-            </div>
+            <a href="https://github.com/smycynek/famousgames3d-v4" class="credits">
+              https://github.com/smycynek/famousgames3d-v4
+            </a>
           </div>
         </div>
       )}

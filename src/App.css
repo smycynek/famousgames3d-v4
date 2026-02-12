@@ -10,6 +10,8 @@
 }
 
 .credits {
+  margin: 0px !important;
+  padding: 0px;
   font-size: 0.75rem;
 }
 
@@ -161,6 +163,9 @@ h1 {
   margin: 0 auto;
 }
 
+a {
+  text-decoration: underline;
+}
 @media (min-width: 1024px) {
   .chessboard-container {
     max-width: 1200px;
@@ -198,6 +203,9 @@ h1 {
   justify-content: center;
 }
 
+.about-title {
+  margin-bottom: 1rem;
+}
 .about-overlay {
   position: fixed;
   top: 0;
@@ -219,7 +227,7 @@ h1 {
   border-style: solid;
   align-items: center;
   justify-content: center;
-
+  width: 70%;
   color: #000000;
 }
 
@@ -235,6 +243,7 @@ h1 {
   cursor: pointer;
   transition: background-color 0.2s;
   padding: 0.25rem 1.5rem;
+  margin: 15px;
 }
 
 .about-ok-btn:hover {
