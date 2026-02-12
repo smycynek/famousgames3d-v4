@@ -230,13 +230,12 @@ function App() {
               <a href="https://cad.onshape.com/documents/1ac43c0042a8a0544e84feed/w/276b025152b1f726b298cef5/e/c3193025dfaf1a651f190a93">
                 Onshape.
               </a>
-              <p>
-                Gameplay in <code>SolidJS</code>, <code>ThreeJS</code>, and <code>chess.js</code>.
-                PGN-parsing with <code>@mliebelt/pgn-parser. </code>
-                Animation with <code>gsap</code>.
-              </p>
             </p>
-
+            <p>
+              Gameplay in <code>SolidJS</code>, <code>ThreeJS</code>, and <code>chess.js</code>.
+              PGN-parsing with <code>@mliebelt/pgn-parser. </code>
+              Animation with <code>gsap</code>.
+            </p>
             <p class="credits">Copyright Steven Mycynek 2026. MIT license</p>
             <a href="https://github.com/smycynek/famousgames3d-v4" class="credits">
               https://github.com/smycynek/famousgames3d-v4

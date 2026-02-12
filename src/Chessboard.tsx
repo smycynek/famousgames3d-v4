@@ -93,9 +93,16 @@ function createPieceInstance(
   texture?: THREE.Texture
 ): THREE.Group {
   const clone = model.clone();
+  let map = texture;
+  if (texture) {
+    map = texture.clone();
+    map.center.set(0.5, 0.5);
+    map.rotation = Math.random() * Math.PI * 2;
+    map.needsUpdate = true;
+  }
   const material = new THREE.MeshStandardMaterial({
     color,
-    map: texture,
+    map,
     metalness: 0.05,
     roughness: 0.25,
     transparent: false,

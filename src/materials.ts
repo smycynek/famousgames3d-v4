@@ -13,7 +13,7 @@ const TEXTURE_BASE_PATH = import.meta.env.BASE_URL + 'textures/';
 export const TEXTURE_PATHS = {
   lightWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_229M.jpg',
   darkWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_233M.jpg',
-  redWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_187S.jpg',
+  redWood: TEXTURE_BASE_PATH + 'Texturelabs_Wood_187M.jpg',
   whiteGranite: TEXTURE_BASE_PATH + 'whiteGranite.jpg',
   blueGranite: TEXTURE_BASE_PATH + 'blueGranite.jpg',
   stone: TEXTURE_BASE_PATH + 'Texturelabs_Stone_134M.jpg',
