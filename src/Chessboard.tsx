@@ -696,8 +696,123 @@ function Chessboard(props: ChessboardProps) {
       }
     }
 
+    // Create molding trim around the board edge
+    {
+      const moldingLeg = SQUARE_HEIGHT;
+      const boardLeft = -SQUARE_SIZE / 2;
+      const boardRight = (BOARD_SIZE - 1) * SQUARE_SIZE + SQUARE_SIZE / 2;
+      const boardFront = -SQUARE_SIZE / 2;
+      const boardBack = (BOARD_SIZE - 1) * SQUARE_SIZE + SQUARE_SIZE / 2;
+      const boardBottom = -SQUARE_HEIGHT / 2;
+      const boardLength = BOARD_SIZE * SQUARE_SIZE;
+
+      const moldingShape = new THREE.Shape();
+      moldingShape.moveTo(0, 0);
+      moldingShape.lineTo(moldingLeg, 0);
+      moldingShape.lineTo(0, moldingLeg);
+      moldingShape.closePath();
+
+      const moldingGeometry = new THREE.ExtrudeGeometry(moldingShape, {
+        steps: 1,
+        depth: boardLength,
+        bevelEnabled: false,
+      });
+
+      const moldingMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1a4d2e,
+        metalness: 0.05,
+        roughness: 0.4,
+        transparent: true,
+        opacity: 0.9,
+      });
+      disposables.push(moldingMaterial);
+
+      // Front, Right, Back, Left
+      const moldingSides: { rotY: number; pos: [number, number, number] }[] = [
+        { rotY: Math.PI / 2, pos: [boardLeft, boardBottom, boardFront] },
+        { rotY: 0, pos: [boardRight, boardBottom, boardFront] },
+        { rotY: -Math.PI / 2, pos: [boardRight, boardBottom, boardBack] },
+        { rotY: Math.PI, pos: [boardLeft, boardBottom, boardBack] },
+      ];
+
+      moldingSides.forEach(({ rotY, pos }) => {
+        const molding = new THREE.Mesh(moldingGeometry, moldingMaterial);
+        molding.rotation.y = rotY;
+        molding.position.set(pos[0], pos[1], pos[2]);
+        molding.castShadow = true;
+        molding.receiveShadow = true;
+        scene.add(molding);
+      });
+
+      // Cap the corners with solid triangular faces
+      const addCornerCap = (v: number[]) => {
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
+        geom.setIndex([0, 1, 2, 0, 2, 1]);
+        geom.computeVertexNormals();
+        const cap = new THREE.Mesh(geom, moldingMaterial);
+        cap.castShadow = true;
+        cap.receiveShadow = true;
+        scene.add(cap);
+      };
+
+      const bt = boardBottom;
+      const tp = boardBottom + moldingLeg;
+      const ml = moldingLeg;
+
+      // Front-right
+      addCornerCap([
+        boardRight,
+        bt,
+        boardFront - ml,
+        boardRight + ml,
+        bt,
+        boardFront,
+        boardRight,
+        tp,
+        boardFront,
+      ]);
+      // Front-left
+      addCornerCap([
+        boardLeft,
+        bt,
+        boardFront - ml,
+        boardLeft - ml,
+        bt,
+        boardFront,
+        boardLeft,
+        tp,
+        boardFront,
+      ]);
+      // Back-right
+      addCornerCap([
+        boardRight,
+        bt,
+        boardBack + ml,
+        boardRight + ml,
+        bt,
+        boardBack,
+        boardRight,
+        tp,
+        boardBack,
+      ]);
+      // Back-left
+      addCornerCap([
+        boardLeft,
+        bt,
+        boardBack + ml,
+        boardLeft - ml,
+        bt,
+        boardBack,
+        boardLeft,
+        tp,
+        boardBack,
+      ]);
+    }
+
     // Create file labels (a-h) along bottom edge (white's side)
     const labelGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+    const labelNudge = 0.045;
     FILES.forEach((file, i) => {
       const texture = createTextTexture(file);
       textureList.push(texture);
@@ -708,7 +823,7 @@ function Chessboard(props: ChessboardProps) {
       label.position.set(
         i * SQUARE_SIZE,
         -SQUARE_HEIGHT / 2 + 0.001,
-        BOARD_SIZE * SQUARE_SIZE - SQUARE_SIZE / 2 + MARGIN / 2
+        BOARD_SIZE * SQUARE_SIZE - SQUARE_SIZE / 2 + MARGIN / 2 + labelNudge
       );
       scene.add(label);
     });
@@ -725,7 +840,7 @@ function Chessboard(props: ChessboardProps) {
       label.position.set(
         i * SQUARE_SIZE,
         -SQUARE_HEIGHT / 2 + 0.001,
-        -SQUARE_SIZE / 2 - MARGIN / 2
+        -SQUARE_SIZE / 2 - MARGIN / 2 - labelNudge
       );
       scene.add(label);
     });
