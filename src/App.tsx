@@ -225,16 +225,19 @@ function App() {
           <div class="about-dialog" onClick={(e) => e.stopPropagation()}>
             <h1 class="about-title">ABOUT FAMOUS GAMES 3D</h1>
             <p>
-              Play back famous chess games from history, or upload your own PGN files to visualize
-              them in 3D! Pieces modeled in{' '}
+              Play back famous chess games from history, or upload your own{' '}
+              <a href="https://en.wikipedia.org/wiki/Portable_Game_Notation">PGN</a> files to
+              visualize them in 3D! Pieces modeled in{' '}
               <a href="https://cad.onshape.com/documents/1ac43c0042a8a0544e84feed/w/276b025152b1f726b298cef5/e/c3193025dfaf1a651f190a93">
                 Onshape.
               </a>
             </p>
             <p>
-              Gameplay in <code>SolidJS</code>, <code>ThreeJS</code>, and <code>chess.js</code>.
-              PGN-parsing with <code>@mliebelt/pgn-parser. </code>
-              Animation with <code>gsap</code>.
+              Gameplay in <a href="https://www.solidjs.com/">SolidJS</a>,{' '}
+              <a href="https://threejs.org/">ThreeJS</a>, and{' '}
+              <a href="https://www.npmjs.com/package/chess.js">chess.js.</a> PGN-parsing with{' '}
+              <a href="https://www.npmjs.com/package/@mliebelt/pgn-parser">@mliebelt/pgn-parser.</a>{' '}
+              Animation with <a href="https://www.npmjs.com/package/gsap">gsap.</a>
             </p>
             <p class="credits">Copyright Steven Mycynek 2026. MIT license</p>
             <a href="https://github.com/smycynek/famousgames3d-v4" class="credits">
