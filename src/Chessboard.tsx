@@ -665,6 +665,7 @@ function Chessboard(props: ChessboardProps) {
           const rotatedTexture = loadedTextures!.whiteGranite.clone();
           rotatedTexture.center.set(0.5, 0.5);
           rotatedTexture.rotation = Math.random() * Math.PI * 2;
+          rotatedTexture.offset.set(Math.random(), Math.random());
           rotatedTexture.needsUpdate = true;
           material = new THREE.MeshStandardMaterial({
             map: rotatedTexture,
@@ -679,6 +680,7 @@ function Chessboard(props: ChessboardProps) {
           const rotatedTexture = loadedTextures!.blueGranite.clone();
           rotatedTexture.center.set(0.5, 0.5);
           rotatedTexture.rotation = Math.random() * Math.PI * 2;
+          rotatedTexture.offset.set(Math.random(), Math.random());
           rotatedTexture.needsUpdate = true;
           material = new THREE.MeshStandardMaterial({
             map: rotatedTexture,

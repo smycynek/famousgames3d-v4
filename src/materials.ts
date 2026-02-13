@@ -54,8 +54,20 @@ export function loadTextures(): LoadedTextures {
     lightWood,
     darkWood,
     redWood,
-    whiteGranite: loader.load(TEXTURE_PATHS.whiteGranite),
-    blueGranite: loader.load(TEXTURE_PATHS.blueGranite),
+    whiteGranite: (() => {
+      const tex = loader.load(TEXTURE_PATHS.whiteGranite);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(0.5, 0.5);
+      return tex;
+    })(),
+    blueGranite: (() => {
+      const tex = loader.load(TEXTURE_PATHS.blueGranite);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(0.25, 0.25);
+      return tex;
+    })(),
     stone: (() => {
       const tex = loader.load(TEXTURE_PATHS.stone);
       tex.wrapS = THREE.RepeatWrapping;
