@@ -12,6 +12,10 @@ import blackKingIcon from './assets/icons/blackKing.svg';
 import uploadIcon from './assets/icons/upload.svg';
 import infoIcon from './assets/icons/info.svg';
 
+const NORMAL_MOVE_DELAY = 1500;
+const CAPTURE_MOVE_DELAY = 3000; // wait for capture animation to finish
+const ANIMATION_DELAY = 2000; // match crown delay in Chessboard
+
 function App() {
   const [gameList, setGameList] = createSignal<ParsedGame[]>([...games]);
   const [selectedGame, setSelectedGame] = createSignal<ParsedGame | null>(games[0] || null);
@@ -22,8 +26,6 @@ function App() {
   const [showAbout, setShowAbout] = createSignal(false);
   const [showScore, setShowScore] = createSignal(false);
   let scoreTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  const ANIMATION_DELAY = 2.0 * 1000; // match crown delay in Chessboard
 
   const handleGameSelect = (e: Event) => {
     const select = e.target as HTMLSelectElement;
@@ -77,9 +79,6 @@ function App() {
     const notation = moves[idx]?.notation?.notation || '';
     return notation.includes('x');
   };
-
-  const NORMAL_MOVE_DELAY = 1500;
-  const CAPTURE_MOVE_DELAY = 3000; // wait for capture animation to finish
 
   const scheduleNextMove = () => {
     const totalMoves = getTotalMoves();
@@ -242,9 +241,7 @@ function App() {
             {String(moveIndex() + 1).padStart(3, '0')}/{String(getTotalMoves()).padStart(3, '0')}
           </span>
           <span class="score">
-            {showScore()
-              ? selectedGame()?.parsed[0]?.tags?.Result || '----'
-              : '----'}
+            {showScore() ? selectedGame()?.parsed[0]?.tags?.Result || '----' : '----'}
           </span>
         </div>
       )}
