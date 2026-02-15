@@ -1,4 +1,4 @@
-import { createSignal, For } from 'solid-js';
+import { createSignal, createEffect, For } from 'solid-js';
 import './App.css';
 import Chessboard from './Chessboard';
 import { games, parseGame, type ParsedGame } from './assets/games';
@@ -20,6 +20,10 @@ function App() {
   let playIntervalId: number | undefined;
   let fileInputRef: HTMLInputElement | undefined;
   const [showAbout, setShowAbout] = createSignal(false);
+  const [showScore, setShowScore] = createSignal(false);
+  let scoreTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const ANIMATION_DELAY = 2.0 * 1000; // match crown delay in Chessboard
 
   const handleGameSelect = (e: Event) => {
     const select = e.target as HTMLSelectElement;
@@ -41,12 +45,60 @@ function App() {
     return game.parsed[0]?.moves?.length || 0;
   };
 
+  createEffect(() => {
+    const idx = moveIndex();
+    const total = getTotalMoves();
+    if (scoreTimeout) {
+      clearTimeout(scoreTimeout);
+      scoreTimeout = null;
+    }
+    setShowScore(false);
+    if (idx >= total - 1 && total > 0) {
+      scoreTimeout = setTimeout(() => {
+        scoreTimeout = null;
+        setShowScore(true);
+      }, ANIMATION_DELAY);
+    }
+  });
+
   const stopPlayback = () => {
     if (playIntervalId) {
-      clearInterval(playIntervalId);
+      clearTimeout(playIntervalId);
       playIntervalId = undefined;
     }
     setIsPlaying(false);
+  };
+
+  const isCaptureMove = (idx: number): boolean => {
+    const game = selectedGame();
+    if (!game) return false;
+    const moves = game.parsed[0]?.moves;
+    if (!moves || idx < 0 || idx >= moves.length) return false;
+    const notation = moves[idx]?.notation?.notation || '';
+    return notation.includes('x');
+  };
+
+  const NORMAL_MOVE_DELAY = 1500;
+  const CAPTURE_MOVE_DELAY = 3000; // wait for capture animation to finish
+
+  const scheduleNextMove = () => {
+    const totalMoves = getTotalMoves();
+    const currentIdx = moveIndex();
+    const delay = isCaptureMove(currentIdx) ? CAPTURE_MOVE_DELAY : NORMAL_MOVE_DELAY;
+
+    playIntervalId = setTimeout(() => {
+      setMoveIndex((prev) => {
+        const next = prev + 1;
+        if (next >= totalMoves) {
+          stopPlayback();
+          return prev;
+        }
+        return next;
+      });
+      if (isPlaying()) {
+        scheduleNextMove();
+      }
+    }, delay) as unknown as number;
   };
 
   const handlePlay = () => {
@@ -76,18 +128,7 @@ function App() {
         }
         return next;
       });
-
-      // Then continue with regular interval for subsequent moves
-      playIntervalId = setInterval(() => {
-        setMoveIndex((prev) => {
-          const next = prev + 1;
-          if (next >= totalMoves) {
-            stopPlayback();
-            return prev;
-          }
-          return next;
-        });
-      }, 1500) as unknown as number;
+      scheduleNextMove();
     }, 300);
   };
 
@@ -201,7 +242,7 @@ function App() {
             {String(moveIndex() + 1).padStart(3, '0')}/{String(getTotalMoves()).padStart(3, '0')}
           </span>
           <span class="score">
-            {moveIndex() >= getTotalMoves() - 1
+            {showScore()
               ? selectedGame()?.parsed[0]?.tags?.Result || '----'
               : '----'}
           </span>

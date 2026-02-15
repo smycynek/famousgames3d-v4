@@ -182,6 +182,7 @@ function Chessboard(props: ChessboardProps) {
   const [pieceModels, setPieceModels] = createSignal<PieceModels | null>(null);
   let crownModel: THREE.Group | null = null;
   const crownMeshes: THREE.Group[] = [];
+  let crownTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(() => {
     if (!containerRef) return;
@@ -516,7 +517,11 @@ function Chessboard(props: ChessboardProps) {
 
       if (!pm) return;
 
-      // Remove any existing crowns
+      // Remove any existing crowns and cancel pending crown placement
+      if (crownTimeout) {
+        clearTimeout(crownTimeout);
+        crownTimeout = null;
+      }
       crownMeshes.forEach((m) => scene.remove(m));
       crownMeshes.length = 0;
 
@@ -600,16 +605,20 @@ function Chessboard(props: ChessboardProps) {
           crownMeshes.push(crown);
         };
 
-        if (result === '1-0') {
-          placeCrown(chairOffset);
-        } else if (result === '0-1') {
-          placeCrown(blackChairZ);
-        } else if (result === '1/2-1/2') {
-          const clipLeft = new THREE.Plane(new THREE.Vector3(0, 0, 1), -chairOffset);
-          const clipRight = new THREE.Plane(new THREE.Vector3(0, 0, -1), blackChairZ);
-          placeCrown(chairOffset, clipLeft);
-          placeCrown(blackChairZ, clipRight);
-        }
+        const crownDelay = ANIMATION_DURATION * 2.0 * 1000;
+        crownTimeout = setTimeout(() => {
+          crownTimeout = null;
+          if (result === '1-0') {
+            placeCrown(chairOffset);
+          } else if (result === '0-1') {
+            placeCrown(blackChairZ);
+          } else if (result === '1/2-1/2') {
+            const clipLeft = new THREE.Plane(new THREE.Vector3(0, 0, 1), -chairOffset);
+            const clipRight = new THREE.Plane(new THREE.Vector3(0, 0, -1), blackChairZ);
+            placeCrown(chairOffset, clipLeft);
+            placeCrown(blackChairZ, clipRight);
+          }
+        }, crownDelay);
       }
 
       lastMoveIndex = moveIndex;
