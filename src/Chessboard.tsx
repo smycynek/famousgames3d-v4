@@ -180,6 +180,9 @@ function Chessboard(props: ChessboardProps) {
   const disposables: THREE.Material[] = [];
   const textureList: THREE.Texture[] = [];
   const [pieceModels, setPieceModels] = createSignal<PieceModels | null>(null);
+  let crownModel: THREE.Group | null = null;
+  const crownMeshes: THREE.Group[] = [];
+  let crownTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(() => {
     if (!containerRef) return;
@@ -486,6 +489,17 @@ function Chessboard(props: ChessboardProps) {
         }
       }
 
+      // Load crown model
+      try {
+        const crownBasePath = import.meta.env.BASE_URL + 'other/';
+        const crownGltf = await loader.loadAsync(`${crownBasePath}crown.gltf`);
+        crownModel = crownGltf.scene;
+        scalePieceToFit(crownModel, PIECE_BASE_SIZE * 2.5);
+        console.log('Loaded crown model');
+      } catch (error) {
+        console.error('Failed to load crown:', error);
+      }
+
       setPieceModels(models as PieceModels);
       console.log('All chess pieces loaded');
 
@@ -502,6 +516,14 @@ function Chessboard(props: ChessboardProps) {
       const moveIndex = props.moveIndex ?? -1;
 
       if (!pm) return;
+
+      // Remove any existing crowns and cancel pending crown placement
+      if (crownTimeout) {
+        clearTimeout(crownTimeout);
+        crownTimeout = null;
+      }
+      crownMeshes.forEach((m) => scene.remove(m));
+      crownMeshes.length = 0;
 
       // If no game selected, show starting position
       if (!game) {
@@ -548,6 +570,57 @@ function Chessboard(props: ChessboardProps) {
         rebuildBoard(chess, pm);
       }
 
+      // Place crown(s) on winner's chair at the last move
+      if (crownModel && moveIndex === moves.length - 1) {
+        const result = parsedGame?.tags?.Result;
+        const chairCenterX = (BOARD_SIZE * SQUARE_SIZE) / 2 - SQUARE_SIZE / 2;
+        const chairOffset = (BOARD_SIZE - 1) * SQUARE_SIZE + SQUARE_SIZE / 2 + MARGIN + 2.5;
+        const blackChairZ = -SQUARE_SIZE / 2 - MARGIN - 2.5;
+        const tableTopY = -SQUARE_HEIGHT / 2 - BASE_HEIGHT - BEVEL_SIZE * 2;
+        const seatY = tableTopY - 5.0;
+        const crownY = seatY + 6.5;
+
+        const placeCrown = (z: number, clipPlane?: THREE.Plane) => {
+          const crown = crownModel!.clone();
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xffd700,
+            metalness: 0.6,
+            roughness: 0.2,
+            side: clipPlane ? THREE.DoubleSide : THREE.FrontSide,
+            clippingPlanes: clipPlane ? [clipPlane] : [],
+          });
+          disposables.push(mat);
+          crown.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.material = mat;
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          crown.scale.multiplyScalar(1.875);
+          crown.rotation.x = -Math.PI / 2;
+          crown.rotation.z = Math.PI / 2;
+          crown.position.set(chairCenterX, crownY, z);
+          scene.add(crown);
+          crownMeshes.push(crown);
+        };
+
+        const crownDelay = ANIMATION_DURATION * 2.0 * 1000;
+        crownTimeout = setTimeout(() => {
+          crownTimeout = null;
+          if (result === '1-0') {
+            placeCrown(chairOffset);
+          } else if (result === '0-1') {
+            placeCrown(blackChairZ);
+          } else if (result === '1/2-1/2') {
+            const clipLeft = new THREE.Plane(new THREE.Vector3(0, 0, 1), -chairOffset);
+            const clipRight = new THREE.Plane(new THREE.Vector3(0, 0, -1), blackChairZ);
+            placeCrown(chairOffset, clipLeft);
+            placeCrown(blackChairZ, clipRight);
+          }
+        }, crownDelay);
+      }
+
       lastMoveIndex = moveIndex;
     });
 
@@ -577,6 +650,7 @@ function Chessboard(props: ChessboardProps) {
     renderer.setSize(containerRef.clientWidth, containerRef.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.localClippingEnabled = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
     containerRef.appendChild(renderer.domElement);
