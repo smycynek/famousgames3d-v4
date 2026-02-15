@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "@mliebelt/pgn-parser": "^1.4.19",
@@ -33,6 +34,7 @@
     "prettier": "^3.8.1",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
-    "vite-plugin-solid": "^2.11.10"
+    "vite-plugin-solid": "^2.11.10",
+    "vitest": "^4.0.18"
   }
 }
