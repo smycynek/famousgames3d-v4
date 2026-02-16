@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite'
-import solid from 'vite-plugin-solid'
+import { defineConfig } from 'vite';
+import solid from 'vite-plugin-solid';
 
 export default defineConfig({
   plugins: [solid()],
-  base: '/famousgames3d-v4/',
+  base: '/famousgames3d/',
   assetsInclude: ['**/*.pgn'],
-})
+});

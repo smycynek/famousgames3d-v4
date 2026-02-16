@@ -354,7 +354,11 @@ function Chessboard(props: ChessboardProps) {
     };
 
     // Set up the board from a chess position (no animation - used for initial setup)
-    const setupBoardFromChess = (chess: Chess, pm: PieceModels) => {
+    const setupBoardFromChess = (
+      chess: Chess,
+      pm: PieceModels,
+      captures?: { type: string; color: 'w' | 'b' }[]
+    ) => {
       clearAllPieces();
       const board = chess.board();
       for (let rank = 0; rank < 8; rank++) {
@@ -371,6 +375,47 @@ function Chessboard(props: ChessboardProps) {
           }
         }
       }
+
+      // Place captured pieces in the graveyard
+      if (captures) {
+        for (const cap of captures) {
+          const pieceType = PIECE_TYPE_MAP[cap.type];
+          const isBlack = cap.color === 'b';
+          const capturedList = isBlack ? capturedBlackPieces : capturedWhitePieces;
+          const captureIndex = capturedList.length;
+
+          const sideX = isBlack ? -SQUARE_SIZE * 2.5 : BOARD_SIZE * SQUARE_SIZE + SQUARE_SIZE * 1.5;
+          const row = captureIndex % 8;
+          const col = Math.floor(captureIndex / 8) * 1.0;
+          const targetX = sideX - (isBlack ? col : -col);
+          const targetZ = isBlack ? (BOARD_SIZE - 1 - row) * SQUARE_SIZE : row * SQUARE_SIZE;
+          const targetY = TABLE_TOP_Y + BEVEL_SIZE;
+
+          const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
+          const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
+          const piece = createPieceInstance(
+            pm[pieceType],
+            color,
+            disposables,
+            PIECE_SCALES[pieceType],
+            texture
+          );
+
+          piece.position.set(targetX, targetY, targetZ);
+          piece.rotation.z = Math.PI / 2;
+          piece.rotation.x = isBlack ? Math.PI / 2 : Math.PI / 2 + Math.PI;
+          if (isBlack) {
+            piece.rotation.y = Math.PI;
+          }
+          if (pieceType === 'knight') {
+            piece.rotation.z += isBlack ? Math.PI / 4 + Math.PI : -Math.PI / 4;
+          }
+
+          scene.add(piece);
+          capturedList.push(piece);
+        }
+      }
+
       currentChess = chess;
     };
 
@@ -546,18 +591,26 @@ function Chessboard(props: ChessboardProps) {
       } else {
         // Moving backward or jumping multiple moves - rebuild the board
         const chess = new Chess();
+        const captures: { type: string; color: 'w' | 'b' }[] = [];
         for (let i = 0; i <= moveIndex && i < moves.length; i++) {
           const move = moves[i];
           if (move.notation?.notation) {
             try {
-              chess.move(move.notation.notation);
+              const result = chess.move(move.notation.notation);
+              if (result?.captured) {
+                // captured color is opposite of the moving color
+                captures.push({
+                  type: result.captured,
+                  color: result.color === 'w' ? 'b' : 'w',
+                });
+              }
             } catch (e) {
               console.error(`Invalid move: ${move.notation.notation}`, e);
               break;
             }
           }
         }
-        setupBoardFromChess(chess, pm);
+        setupBoardFromChess(chess, pm, captures);
       }
 
       // Place crown(s) on winner's chair at the last move

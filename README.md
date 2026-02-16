@@ -3,7 +3,7 @@
 Copyright Steve Mycynek 2026
 
 A few years ago, I created a site to replay famous chess games
-at https://stevenvictor.net/famousgames3d. (This is the old site -- the new one is below)
+at https://stevenvictor.net/famousgames3d-old. (This is the old site -- the new one is below)
 
 I wrote manually it with Angular, ThreeJs, TweenJs, and a pgn game notation parser.
 I managed all the animation and chess moves myself.  The result was decent,
@@ -39,7 +39,7 @@ https://www.chessgames.com/
 
 
 ## Live demo
-https://stevenvictor.net/famousgames3d-v4
+https://stevenvictor.net/famousgames3d
 
 
 
