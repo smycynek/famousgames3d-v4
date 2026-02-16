@@ -6,7 +6,7 @@
   "homepage": "/famousgames3d-v4/",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --base=/famousgames3d-v4/",
+    "build": "tsc --noEmit && vite build --base=/famousgames3d-v4/",
     "preview": "vite preview",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
