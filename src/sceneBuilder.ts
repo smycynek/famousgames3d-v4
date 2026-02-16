@@ -87,7 +87,7 @@ export function buildTable(params: SceneBuilderParams): THREE.ExtrudeGeometry {
   tableGeometry.rotateX(-Math.PI / 2);
   const tableMaterial = new THREE.MeshStandardMaterial({
     map: textures.stone,
-    color: 0xffffff,
+    color: 0xd8d0c8,
     metalness: 0.1,
     roughness: 0.5,
   });
@@ -120,7 +120,7 @@ export function buildPedestal(params: SceneBuilderParams): void {
   textureList.push(pedestalTexture);
   const pedestalMaterial = new THREE.MeshStandardMaterial({
     map: pedestalTexture,
-    color: 0xffffff,
+    color: 0xd8d0c8,
     metalness: 0.1,
     roughness: 0.5,
   });
@@ -141,49 +141,65 @@ export function buildFloor(params: SceneBuilderParams): void {
 
   const pedestalHeight = TABLE_HEIGHT * 10;
   const floorY = TABLE_TOP_Y - TABLE_HEIGHT - pedestalHeight;
+  // Sand texture
   const floorCanvas = document.createElement('canvas');
-  floorCanvas.width = 512;
-  floorCanvas.height = 512;
+  floorCanvas.width = 1024;
+  floorCanvas.height = 1024;
   const floorCtx = floorCanvas.getContext('2d')!;
-  const floorImageData = floorCtx.createImageData(512, 512);
+  const floorImageData = floorCtx.createImageData(1024, 1024);
   const fd = floorImageData.data;
-  for (let y = 0; y < 512; y++) {
-    for (let x = 0; x < 512; x++) {
-      const idx = (y * 512 + x) * 4;
-      const rx = (x - 256) * 0.707 - (y - 256) * 0.707;
-      const ry = (x - 256) * 0.707 + (y - 256) * 0.707;
-      const ring = Math.sin(ry * 0.06 + Math.sin(rx * 0.015) * 3) * 0.5 + 0.5;
-      const grain = Math.sin(ry * 0.4 + Math.sin(rx * 0.08) * 2) * 0.12;
-      const noise = (Math.random() - 0.5) * 0.06;
-      const value = ring + grain + noise;
-      fd[idx] = Math.min(255, Math.max(0, 200 + value * 30));
-      fd[idx + 1] = Math.min(255, Math.max(0, 175 + value * 28));
-      fd[idx + 2] = Math.min(255, Math.max(0, 140 + value * 26));
+
+  for (let y = 0; y < 1024; y++) {
+    for (let x = 0; x < 1024; x++) {
+      const idx = (y * 1024 + x) * 4;
+      const grain = (Math.random() - 0.5) * 30;
+      const wave = Math.sin(x * 0.02 + Math.sin(y * 0.01) * 2) * 8;
+      const ripple = Math.sin(y * 0.05 + Math.sin(x * 0.03) * 1.5) * 5;
+      fd[idx] = Math.min(255, Math.max(0, 215 + grain + wave + ripple));
+      fd[idx + 1] = Math.min(255, Math.max(0, 190 + grain + wave + ripple));
+      fd[idx + 2] = Math.min(255, Math.max(0, 145 + grain * 0.7 + wave + ripple));
       fd[idx + 3] = 255;
     }
   }
+
   floorCtx.putImageData(floorImageData, 0, 0);
   const floorTexture = new THREE.CanvasTexture(floorCanvas);
   floorTexture.wrapS = THREE.RepeatWrapping;
   floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(50, 50);
+  floorTexture.repeat.set(20, 20);
   floorTexture.needsUpdate = true;
   textureList.push(floorTexture);
 
   const floorMaterial = new THREE.MeshStandardMaterial({
     map: floorTexture,
-    color: 0xd4b896,
-    metalness: 0.05,
-    roughness: 0.6,
+    color: 0xffffff,
+    metalness: 0.0,
+    roughness: 0.9,
   });
   disposables.push(floorMaterial);
 
-  const floorGeometry = new THREE.PlaneGeometry(500, 500);
+  const floorGeometry = new THREE.CircleGeometry(250, 64);
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(BOARD_CENTER, floorY, BOARD_CENTER);
   floor.receiveShadow = true;
   scene.add(floor);
+
+  // Water plane in the distance
+  const waterGeometry = new THREE.PlaneGeometry(2000, 2000);
+  const waterMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1a6e8a,
+    metalness: 0.3,
+    roughness: 0.2,
+    transparent: true,
+    opacity: 0.85,
+  });
+  disposables.push(waterMaterial);
+  const water = new THREE.Mesh(waterGeometry, waterMaterial);
+  water.rotation.x = -Math.PI / 2;
+  water.position.set(BOARD_CENTER, floorY - 0.5, BOARD_CENTER);
+  water.receiveShadow = false;
+  scene.add(water);
 }
 
 export function buildChairs(params: SceneBuilderParams): void {
