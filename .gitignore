@@ -138,9 +138,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-famousgames3d-v4
-famousgames3d-v4.zip
+famousgames3d
+famousgames3d.zip
 .claude/
 sitevars.sh
 
 .DS_Store
+reroute/

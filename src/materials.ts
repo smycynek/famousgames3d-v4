@@ -3,8 +3,8 @@ import * as THREE from 'three';
 // Colors
 export const WHITE_PIECE_COLOR = 0xfff0d8; // Ivory tint
 export const BLACK_PIECE_COLOR = 0x888080; // Darker tint with black
-export const SCENE_BACKGROUND_COLOR = 0x000005; // Near black
-export const SCENE_BACKGROUND_COLOR_2 = 0x8f7b6f; // Beige
+export const SCENE_BACKGROUND_COLOR = 0x0d0705; // Blended dark
+export const SCENE_BACKGROUND_COLOR_2 = 0xa3886e; // Blended warm beige
 export const LABEL_TEXT_COLOR = '#aa7700';
 
 // Texture paths

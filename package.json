@@ -1,12 +1,12 @@
 {
-  "name": "famousgames3d-v4",
+  "name": "famousgames3d",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "/famousgames3d-v4/",
+  "homepage": "/famousgames3d/",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build --base=/famousgames3d-v4/",
+    "build": "tsc --noEmit && vite build --base=/famousgames3d/",
     "preview": "vite preview",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
