@@ -15,6 +15,7 @@ import infoIcon from './assets/icons/info.svg';
 const NORMAL_MOVE_DELAY = 1500;
 const CAPTURE_MOVE_DELAY = 3000; // wait for capture animation to finish
 const ANIMATION_DELAY = 2000; // match crown delay in Chessboard
+const MOVE_ANIMATION_DURATION = 1000; // match ANIMATION_DURATION in Chessboard (1s)
 
 function App() {
   const [gameList, setGameList] = createSignal<ParsedGame[]>([...games]);
@@ -26,6 +27,9 @@ function App() {
   const [showAbout, setShowAbout] = createSignal(false);
   const [showGameInfo, setShowGameInfo] = createSignal(false);
   const [showScore, setShowScore] = createSignal(false);
+  const [isAnimating, setIsAnimating] = createSignal(false);
+  let lastMoveDirection: 'forward' | 'backward' = 'forward';
+  let animatingTimeout: ReturnType<typeof setTimeout> | null = null;
   let scoreTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const handleGameSelect = (e: Event) => {
@@ -51,6 +55,19 @@ function App() {
   createEffect(() => {
     const idx = moveIndex();
     const total = getTotalMoves();
+    if (animatingTimeout) {
+      clearTimeout(animatingTimeout);
+      animatingTimeout = null;
+    }
+    if (idx >= 0 && lastMoveDirection === 'forward') {
+      setIsAnimating(true);
+      animatingTimeout = setTimeout(() => {
+        animatingTimeout = null;
+        setIsAnimating(false);
+      }, MOVE_ANIMATION_DURATION);
+    } else {
+      setIsAnimating(false);
+    }
     if (scoreTimeout) {
       clearTimeout(scoreTimeout);
       scoreTimeout = null;
@@ -102,6 +119,7 @@ function App() {
   };
 
   const handlePlay = () => {
+    lastMoveDirection = 'forward';
     const game = selectedGame();
     if (!game) return;
 
@@ -139,6 +157,7 @@ function App() {
 
   const handleStepForward = () => {
     stopPlayback();
+    lastMoveDirection = 'forward';
     const totalMoves = getTotalMoves();
     if (moveIndex() < totalMoves - 1) {
       setMoveIndex((prev) => prev + 1);
@@ -147,6 +166,7 @@ function App() {
 
   const handleStepBack = () => {
     stopPlayback();
+    lastMoveDirection = 'backward';
     if (moveIndex() >= 0) {
       setMoveIndex((prev) => prev - 1);
     }
@@ -239,7 +259,7 @@ function App() {
             </button>
           </div>
           <span class="turn-icon">
-            {!isPlaying() && moveIndex() < getTotalMoves() - 1 && (
+            {!isPlaying() && !isAnimating() && moveIndex() < getTotalMoves() - 1 && (
               <img
                 title={(moveIndex() + 1) % 2 === 0 ? 'White to move' : 'Black to move'}
                 src={(moveIndex() + 1) % 2 === 0 ? whiteKingIcon : blackKingIcon}
