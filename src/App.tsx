@@ -24,6 +24,7 @@ function App() {
   const [isPlaying, setIsPlaying] = createSignal(false);
   let playIntervalId: number | undefined;
   let fileInputRef: HTMLInputElement | undefined;
+  const [assetsLoaded, setAssetsLoaded] = createSignal(false);
   const [showAbout, setShowAbout] = createSignal(false);
   const [showGameInfo, setShowGameInfo] = createSignal(false);
   const [showScore, setShowScore] = createSignal(false);
@@ -206,7 +207,7 @@ function App() {
   return (
     <div class="app">
       <div class="header-row">
-        <h1>FAMOUS GAMES 3D</h1>
+        <h1>{assetsLoaded() ? 'FAMOUS GAMES 3D' : 'FAMOUS GAMES 3D (LOADING...)'}</h1>
         <div class="controls">
           <select
             title="Select a game"
@@ -275,7 +276,7 @@ function App() {
           </span>
         </div>
       )}
-      <Chessboard game={selectedGame()} moveIndex={moveIndex()} />
+      <Chessboard game={selectedGame()} moveIndex={moveIndex()} onLoaded={() => setAssetsLoaded(true)} />
       <div class="footer-row">
         <a
           class="notes"

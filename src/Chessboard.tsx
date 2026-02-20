@@ -86,6 +86,7 @@ function createGradientBackground(topColor: number, bottomColor: number): THREE.
 interface ChessboardProps {
   game?: ParsedGame | null;
   moveIndex?: number;
+  onLoaded?: () => void;
 }
 
 function scalePieceToFit(model: THREE.Group, targetBaseSize: number): void {
@@ -537,6 +538,7 @@ function Chessboard(props: ChessboardProps) {
 
       setPieceModels(models as PieceModels);
       console.log('All chess pieces loaded');
+      props.onLoaded?.();
 
       // Set up the starting position
       const chess = new Chess();
