@@ -76,6 +76,15 @@ h1 {
   gap: 0.2rem;
 }
 
+.ok {
+  margin-top: 1rem !important;
+  font-size: 0.8rem !important;
+  padding: 0;
+  gap: 0;
+  line-height: 0.5rem;
+  border-color: black;
+}
+
 .playback-controls button {
   width: 3rem;
   height: 2rem;
@@ -127,6 +136,52 @@ h1 {
   width: 1.2rem;
   height: 1.2rem;
   vertical-align: middle;
+  outline-color: black;
+}
+
+.info-btn {
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: 2px solid #555;
+  background-color: transparent;
+  color: #000000;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scale: 0.95;
+}
+
+.info-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: #777;
+}
+
+.info-btn:active {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.game-info-dialog {
+  background-color: #f5f5dc;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  border-style: solid;
+  color: #000000;
+  min-width: 200px;
+  text-align: left;
+}
+
+.game-info-title {
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+}
+
+.game-info-dialog p {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
 }
 
 .upload-btn {
@@ -186,10 +241,31 @@ a {
   }
 }
 
+@media (max-width: 767px) {
+  .upload-btn {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) and (orientation: portrait) {
   .header-row h1 {
     margin-top: 2rem;
   }
+}
+
+select {
+  /* Remove default appearance */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIiBjbGFzcz0ic2l6ZS02Ij4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMiAxMikgc2NhbGUoMC42NCkgdHJhbnNsYXRlKC0xMiAtMTIpIj4KICAgIDxnIHRyYW5zZm9ybT0icm90YXRlKDkwIDEyIDEyKSI+CiAgICAgIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTQuNSA1LjY1M2MwLTEuNDI3IDEuNTI5LTIuMzMgMi43NzktMS42NDNsMTEuNTQgNi4zNDdjMS4yOTUuNzEyIDEuMjk1IDIuNTczIDAgMy4yODZMNy4yOCAxOS45OWMtMS4yNS42ODctMi43NzktLjIxNy0yLjc3OS0xLjY0M1Y1LjY1M1oiIGNsaXAtcnVsZT0iZXZlbm9kZCIgLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=')
+    no-repeat right;
+  color: black;
+}
+
+select:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: #777;
 }
 
 .footer-row {
@@ -239,6 +315,9 @@ a {
 
 .about-dialog p {
   margin: 0 0 1rem 0;
+}
+.about-content {
+  text-align: left;
 }
 
 .about-ok-btn {

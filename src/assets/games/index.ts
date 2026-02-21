@@ -1,20 +1,6 @@
 import { parse } from '@mliebelt/pgn-parser';
 import type { ParseTree } from '@mliebelt/pgn-parser';
 
-// Import PGN files as raw text
-import samplePgn from './sample.pgn?raw';
-import sampleStdPgn from './sampleStd.pgn?raw';
-import game1008361Pgn from './game_1008361.pgn?raw';
-import game1044366Pgn from './game_1044366.pgn?raw';
-import game1070917Pgn from './game_1070917.pgn?raw';
-
-import game1011478 from './game_1011478.pgn?raw';
-import game1019060 from './game_1019060.pgn?raw';
-import game1031957 from './game_1031957.pgn?raw';
-import game1233404 from './game_1233404.pgn?raw';
-import game1769541 from './game_1769541.pgn?raw';
-import game1279168 from './game_1279168.pgn?raw';
-
 export interface ParsedGame {
   name: string;
   pgn: string;
@@ -31,20 +17,18 @@ export function parseGame(name: string, pgnContent: string): ParsedGame {
   };
 }
 
+// Dynamically import all .pgn files from this directory
+const pgnModules = import.meta.glob('./*.pgn', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as Record<string, string>;
+
 // Export parsed games
-export const games: ParsedGame[] = [
-  parseGame('game_1233404', game1233404),
-  parseGame('game_1769541', game1769541),
-  parseGame('game_1279168', game1279168),
-  parseGame('game_1011478', game1011478),
-  parseGame('game_1019060', game1019060),
-  parseGame('game_1031957', game1031957),
-  parseGame('game_1008361', game1008361Pgn),
-  parseGame('game_1044366', game1044366Pgn),
-  parseGame('game_1070917', game1070917Pgn),
-  parseGame('sampleStd', sampleStdPgn),
-  parseGame('sample', samplePgn),
-];
+export const games: ParsedGame[] = Object.entries(pgnModules).map(([path, content]) => {
+  const name = path.replace('./', '').replace('.pgn', '');
+  return parseGame(name, content);
+});
 
 // Get a game by name
 export function getGame(name: string): ParsedGame | undefined {
