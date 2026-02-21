@@ -276,7 +276,11 @@ function App() {
           </span>
         </div>
       )}
-      <Chessboard game={selectedGame()} moveIndex={moveIndex()} onLoaded={() => setAssetsLoaded(true)} />
+      <Chessboard
+        game={selectedGame()}
+        moveIndex={moveIndex()}
+        onLoaded={() => setAssetsLoaded(true)}
+      />
       <div class="footer-row">
         <a
           class="notes"

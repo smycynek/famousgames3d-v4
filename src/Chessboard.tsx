@@ -704,7 +704,7 @@ function Chessboard(props: ChessboardProps) {
     controls.target.set(3.5, 0, 3.5);
     controls.minDistance = 5;
     controls.maxDistance = 30;
-    controls.maxPolarAngle = Math.PI / 2 - 0.1;
+    controls.maxPolarAngle = Math.PI / 2 - 0.2;
     controls.update();
 
     // Lighting
