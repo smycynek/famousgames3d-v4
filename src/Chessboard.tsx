@@ -15,14 +15,8 @@ import {
   SCENE_BACKGROUND_COLOR_2,
 } from './materials';
 import {
-  BOARD_SIZE,
   SQUARE_SIZE,
   SQUARE_HEIGHT,
-  MARGIN,
-  BEVEL_SIZE,
-  TABLE_TOP_Y,
-  BOARD_CENTER,
-  SEAT_Y,
   buildBase,
   buildTable,
   buildPedestal,
@@ -33,155 +27,30 @@ import {
   buildLabels,
   type SceneBuilderParams,
 } from './sceneBuilder';
-
-const PIECE_TYPES = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'] as const;
-const PIECE_BASE_SIZE = SQUARE_SIZE * 0.6 * 2 * 0.8; // 60% of square width, scaled
-const ANIMATION_DURATION = 1.0; // seconds
-const KNIGHT_HOP_HEIGHT = 1.5; // how high knights jump
-type PieceType = (typeof PIECE_TYPES)[number];
-type PieceModels = Record<PieceType, THREE.Group>;
-
-// Pre-computed piece scale factors
-const PIECE_SCALES: Record<PieceType, number> = {
-  queen: 1.4641 * 1.07 * 1.05 * 1.05,
-  king: 1.4641 * 1.07 * 1.02 * 1.03 * 1.05 * 1.05,
-  bishop: 1.4641 * 1.07 * 0.9 * 1.05 * 1.05,
-  knight: 1.07 * 1.05 * 1.05,
-  pawn: 0.825 * 1.1 * 1.03 * 1.03,
-  rook: 1.05 * 1.05,
-};
-
-// Map chess.js piece types to our piece types
-const PIECE_TYPE_MAP: Record<string, PieceType> = {
-  p: 'pawn',
-  r: 'rook',
-  n: 'knight',
-  b: 'bishop',
-  q: 'queen',
-  k: 'king',
-};
-
-// Create gradient background texture
-function createGradientBackground(topColor: number, bottomColor: number): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 2;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d')!;
-
-  const topColorStr = '#' + topColor.toString(16).padStart(6, '0');
-  const bottomColorStr = '#' + bottomColor.toString(16).padStart(6, '0');
-
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, topColorStr);
-  gradient.addColorStop(1, bottomColorStr);
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
+import {
+  PIECE_TYPES,
+  PIECE_BASE_SIZE,
+  ANIMATION_DURATION,
+  KNIGHT_HOP_HEIGHT,
+  PIECE_SCALES,
+  PIECE_TYPE_MAP,
+  type PieceType,
+  type PieceModels,
+  type PieceInfo,
+  createGradientBackground,
+  scalePieceToFit,
+  createPieceInstance,
+  placePiece,
+  toSquareName,
+  fromSquareName,
+} from './pieceUtils';
+import { getGraveyardPosition } from './graveyardUtils';
+import { clearCrowns, scheduleCrowns } from './crownManager';
 
 interface ChessboardProps {
   game?: ParsedGame | null;
   moveIndex?: number;
   onLoaded?: () => void;
-}
-
-function scalePieceToFit(model: THREE.Group, targetBaseSize: number): void {
-  const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-
-  // Use the larger of X or Z as the base diameter
-  const currentBaseSize = Math.max(size.x, size.z);
-  const scale = targetBaseSize / currentBaseSize;
-
-  model.scale.set(scale, scale, scale);
-}
-
-function createPieceInstance(
-  model: THREE.Group,
-  color: number,
-  disposables: THREE.Material[],
-  scale: number = 1,
-  texture?: THREE.Texture
-): THREE.Group {
-  const clone = model.clone();
-  let map = texture;
-  if (texture) {
-    map = texture.clone();
-    map.center.set(0.5, 0.5);
-    map.rotation = Math.random() * Math.PI * 2;
-    map.needsUpdate = true;
-  }
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    map,
-    metalness: 0.05,
-    roughness: 0.25,
-    transparent: false,
-    opacity: 1,
-  });
-  disposables.push(material);
-
-  clone.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.material = material;
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-
-  if (scale !== 1) {
-    clone.scale.multiplyScalar(scale);
-  }
-
-  return clone;
-}
-
-function placePiece(
-  piece: THREE.Group,
-  col: number,
-  row: number,
-  scene: THREE.Scene,
-  isBlack: boolean
-): void {
-  // Position piece at center of square, on top of the board
-  piece.position.set(col * SQUARE_SIZE, SQUARE_HEIGHT / 2, row * SQUARE_SIZE);
-
-  // Rotate all pieces 90 degrees on Z axis and X axis
-  piece.rotation.z = Math.PI / 2;
-  piece.rotation.x = isBlack ? Math.PI / 2 : Math.PI / 2 + Math.PI;
-
-  // Rotate black pieces to face the other direction
-  if (isBlack) {
-    piece.rotation.y = Math.PI;
-  }
-
-  scene.add(piece);
-}
-
-// Helper to convert col/row to square name (e.g., 0,7 -> "a1")
-function toSquareName(col: number, row: number): string {
-  const file = String.fromCharCode(97 + col); // 'a' to 'h'
-  const rank = 8 - row; // row 0 = rank 8, row 7 = rank 1
-  return `${file}${rank}`;
-}
-
-// Helper to convert square name to col/row
-function fromSquareName(square: string): { col: number; row: number } {
-  const col = square.charCodeAt(0) - 97;
-  const rank = parseInt(square[1]);
-  const row = 8 - rank;
-  return { col, row };
-}
-
-interface PieceInfo {
-  mesh: THREE.Group;
-  type: PieceType;
-  isBlack: boolean;
 }
 
 function Chessboard(props: ChessboardProps) {
@@ -198,7 +67,7 @@ function Chessboard(props: ChessboardProps) {
   const [pieceModels, setPieceModels] = createSignal<PieceModels | null>(null);
   let crownModel: THREE.Group | null = null;
   const crownMeshes: THREE.Group[] = [];
-  let crownTimeout: ReturnType<typeof setTimeout> | null = null;
+  const crownTimeout: { current: ReturnType<typeof setTimeout> | null } = { current: null };
 
   onMount(() => {
     if (!containerRef) return;
@@ -249,6 +118,40 @@ function Chessboard(props: ChessboardProps) {
         piece.rotation.z += isBlack ? Math.PI / 4 + Math.PI : -Math.PI / 4;
       }
       return { mesh: piece, type: pieceType, isBlack };
+    };
+
+    // Create a piece positioned in the graveyard (for captured pieces during board rebuild)
+    const createGraveyardPiece = (
+      pm: PieceModels,
+      pieceType: PieceType,
+      isBlack: boolean,
+      capturedList: THREE.Group[]
+    ) => {
+      const captureIndex = capturedList.length;
+      const { x, y, z } = getGraveyardPosition(isBlack, captureIndex);
+
+      const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
+      const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
+      const piece = createPieceInstance(
+        pm[pieceType],
+        color,
+        disposables,
+        PIECE_SCALES[pieceType],
+        texture
+      );
+
+      piece.position.set(x, y, z);
+      piece.rotation.z = Math.PI / 2;
+      piece.rotation.x = isBlack ? Math.PI / 2 : Math.PI / 2 + Math.PI;
+      if (isBlack) {
+        piece.rotation.y = Math.PI;
+      }
+      if (pieceType === 'knight') {
+        piece.rotation.z += isBlack ? Math.PI / 4 + Math.PI : -Math.PI / 4;
+      }
+
+      scene.add(piece);
+      capturedList.push(piece);
     };
 
     // Animate a piece moving from one position to another
@@ -305,53 +208,88 @@ function Chessboard(props: ChessboardProps) {
       }
     };
 
+    // Animate a captured piece to the graveyard
+    const animateCapture = (info: PieceInfo, capturedList: THREE.Group[], delay: number) => {
+      const captureIndex = capturedList.length;
+      capturedList.push(info.mesh);
+      const {
+        x: targetX,
+        y: targetY,
+        z: targetZ,
+      } = getGraveyardPosition(info.isBlack, captureIndex);
+
+      // Raise up quickly and high to avoid collision, move to side, then lower
+      gsap.to(info.mesh.position, {
+        duration: ANIMATION_DURATION * 0.4,
+        delay: delay,
+        y: info.mesh.position.y + SQUARE_SIZE * 2.1,
+        ease: 'power2.out',
+      });
+      gsap.to(info.mesh.position, {
+        duration: ANIMATION_DURATION * 0.9,
+        delay: delay + ANIMATION_DURATION * 0.4,
+        x: targetX,
+        z: targetZ,
+        ease: 'power2.inOut',
+      });
+      gsap.to(info.mesh.position, {
+        duration: ANIMATION_DURATION * 0.5,
+        delay: delay + ANIMATION_DURATION * 1.3,
+        y: targetY,
+        ease: 'power2.in',
+      });
+    };
+
     // Remove a piece with optional animation and delay - moves captured pieces to the side
     const removePiece = (squareName: string, animate: boolean = false, delay: number = 0) => {
       const info = piecesBySquare.get(squareName);
       if (info) {
         if (animate) {
-          // Determine which side to place the captured piece
           const capturedList = info.isBlack ? capturedBlackPieces : capturedWhitePieces;
-          const captureIndex = capturedList.length;
-          capturedList.push(info.mesh);
-
-          // Calculate target position on the side of the board
-          // White pieces (captured by black) go on the right, black pieces go on the left
-          const sideX = info.isBlack
-            ? -SQUARE_SIZE * 2.5 // Left side for captured black pieces
-            : BOARD_SIZE * SQUARE_SIZE + SQUARE_SIZE * 1.5; // Right side for captured white pieces
-          const row = captureIndex % 8; // Wrap around after 8 pieces
-          const col = Math.floor(captureIndex / 8) * 1.0; // Stack in columns if more than 8
-          const targetX = sideX - (info.isBlack ? col : -col);
-          // Black pieces line up starting near rank 1 (white's side), white pieces near rank 8 (black's side)
-          const targetZ = info.isBlack ? (BOARD_SIZE - 1 - row) * SQUARE_SIZE : row * SQUARE_SIZE;
-          const targetY = TABLE_TOP_Y + BEVEL_SIZE; // Rest on the table
-
-          // Animate captured piece: raise up quickly and high to avoid collision, move to side, then lower
-          gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.4,
-            delay: delay,
-            y: info.mesh.position.y + SQUARE_SIZE * 2.1,
-            ease: 'power2.out',
-          });
-          gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.9,
-            delay: delay + ANIMATION_DURATION * 0.4,
-            x: targetX,
-            z: targetZ,
-            ease: 'power2.inOut',
-          });
-          gsap.to(info.mesh.position, {
-            duration: ANIMATION_DURATION * 0.5,
-            delay: delay + ANIMATION_DURATION * 1.3,
-            y: targetY,
-            ease: 'power2.in',
-          });
+          animateCapture(info, capturedList, delay);
         } else {
           scene.remove(info.mesh);
         }
         piecesBySquare.delete(squareName);
       }
+    };
+
+    // Animate promotion: replace pawn with promoted piece and flash brightness
+    const animatePromotion = (
+      pm: PieceModels,
+      toSquare: string,
+      toCol: number,
+      toRow: number,
+      promotedType: PieceType,
+      isBlack: boolean
+    ) => {
+      setTimeout(() => {
+        removePiece(toSquare, false);
+        const newPieceInfo = createPiece(pm, promotedType, toCol, toRow, isBlack);
+        piecesBySquare.set(toSquare, newPieceInfo);
+
+        // Brief brightness boost for promoted piece
+        const materials: THREE.MeshStandardMaterial[] = [];
+        newPieceInfo.mesh.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            const mat = child.material as THREE.MeshStandardMaterial;
+            mat.emissive = new THREE.Color(0xffffff);
+            mat.emissiveIntensity = 0.5;
+            materials.push(mat);
+          }
+        });
+        const brightnessProxy = { value: 0.5 };
+        gsap.to(brightnessProxy, {
+          duration: 0.5,
+          value: 0,
+          ease: 'power2.out',
+          onUpdate: () => {
+            materials.forEach((mat) => {
+              mat.emissiveIntensity = brightnessProxy.value;
+            });
+          },
+        });
+      }, ANIMATION_DURATION * 1000);
     };
 
     // Set up the board from a chess position (no animation - used for initial setup)
@@ -383,37 +321,7 @@ function Chessboard(props: ChessboardProps) {
           const pieceType = PIECE_TYPE_MAP[cap.type];
           const isBlack = cap.color === 'b';
           const capturedList = isBlack ? capturedBlackPieces : capturedWhitePieces;
-          const captureIndex = capturedList.length;
-
-          const sideX = isBlack ? -SQUARE_SIZE * 2.5 : BOARD_SIZE * SQUARE_SIZE + SQUARE_SIZE * 1.5;
-          const row = captureIndex % 8;
-          const col = Math.floor(captureIndex / 8) * 1.0;
-          const targetX = sideX - (isBlack ? col : -col);
-          const targetZ = isBlack ? (BOARD_SIZE - 1 - row) * SQUARE_SIZE : row * SQUARE_SIZE;
-          const targetY = TABLE_TOP_Y + BEVEL_SIZE;
-
-          const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
-          const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
-          const piece = createPieceInstance(
-            pm[pieceType],
-            color,
-            disposables,
-            PIECE_SCALES[pieceType],
-            texture
-          );
-
-          piece.position.set(targetX, targetY, targetZ);
-          piece.rotation.z = Math.PI / 2;
-          piece.rotation.x = isBlack ? Math.PI / 2 : Math.PI / 2 + Math.PI;
-          if (isBlack) {
-            piece.rotation.y = Math.PI;
-          }
-          if (pieceType === 'knight') {
-            piece.rotation.z += isBlack ? Math.PI / 4 + Math.PI : -Math.PI / 4;
-          }
-
-          scene.add(piece);
-          capturedList.push(piece);
+          createGraveyardPiece(pm, pieceType, isBlack, capturedList);
         }
       }
 
@@ -473,34 +381,7 @@ function Chessboard(props: ChessboardProps) {
       if (move.promotion) {
         const promotedType = PIECE_TYPE_MAP[move.promotion];
         const isBlack = move.color === 'b';
-        // Remove the pawn and create the promoted piece
-        setTimeout(() => {
-          removePiece(toSquare, false);
-          const newPieceInfo = createPiece(pm, promotedType, toCol, toRow, isBlack);
-          piecesBySquare.set(toSquare, newPieceInfo);
-
-          // Brief brightness boost for promoted piece
-          const materials: THREE.MeshStandardMaterial[] = [];
-          newPieceInfo.mesh.traverse((child) => {
-            if (child instanceof THREE.Mesh && child.material) {
-              const mat = child.material as THREE.MeshStandardMaterial;
-              mat.emissive = new THREE.Color(0xffffff);
-              mat.emissiveIntensity = 0.5;
-              materials.push(mat);
-            }
-          });
-          const brightnessProxy = { value: 0.5 };
-          gsap.to(brightnessProxy, {
-            duration: 0.5,
-            value: 0,
-            ease: 'power2.out',
-            onUpdate: () => {
-              materials.forEach((mat) => {
-                mat.emissiveIntensity = brightnessProxy.value;
-              });
-            },
-          });
-        }, ANIMATION_DURATION * 1000);
+        animatePromotion(pm, toSquare, toCol, toRow, promotedType, isBlack);
       }
 
       currentChess = chess;
@@ -555,12 +436,7 @@ function Chessboard(props: ChessboardProps) {
       if (!pm) return;
 
       // Remove any existing crowns and cancel pending crown placement
-      if (crownTimeout) {
-        clearTimeout(crownTimeout);
-        crownTimeout = null;
-      }
-      crownMeshes.forEach((m) => scene.remove(m));
-      crownMeshes.length = 0;
+      clearCrowns(scene, crownMeshes, crownTimeout);
 
       // If no game selected, show starting position
       if (!game) {
@@ -618,49 +494,7 @@ function Chessboard(props: ChessboardProps) {
       // Place crown(s) on winner's chair at the last move
       if (crownModel && moveIndex === moves.length - 1) {
         const result = parsedGame?.tags?.Result;
-        const chairOffset = (BOARD_SIZE - 1) * SQUARE_SIZE + SQUARE_SIZE / 2 + MARGIN + 2.5;
-        const blackChairZ = -SQUARE_SIZE / 2 - MARGIN - 2.5;
-        const crownY = SEAT_Y + 6.5;
-
-        const placeCrown = (z: number, clipPlane?: THREE.Plane) => {
-          const crown = crownModel!.clone();
-          const mat = new THREE.MeshStandardMaterial({
-            color: 0xffd700,
-            metalness: 0.6,
-            roughness: 0.2,
-            side: clipPlane ? THREE.DoubleSide : THREE.FrontSide,
-            clippingPlanes: clipPlane ? [clipPlane] : [],
-          });
-          disposables.push(mat);
-          crown.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.material = mat;
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-          crown.scale.multiplyScalar(1.875);
-          crown.rotation.x = -Math.PI / 2;
-          crown.rotation.z = Math.PI / 2;
-          crown.position.set(BOARD_CENTER, crownY, z);
-          scene.add(crown);
-          crownMeshes.push(crown);
-        };
-
-        const crownDelay = ANIMATION_DURATION * 2.0 * 1000;
-        crownTimeout = setTimeout(() => {
-          crownTimeout = null;
-          if (result === '1-0') {
-            placeCrown(chairOffset);
-          } else if (result === '0-1') {
-            placeCrown(blackChairZ);
-          } else if (result === '1/2-1/2') {
-            const clipLeft = new THREE.Plane(new THREE.Vector3(0, 0, 1), -chairOffset);
-            const clipRight = new THREE.Plane(new THREE.Vector3(0, 0, -1), blackChairZ);
-            placeCrown(chairOffset, clipLeft);
-            placeCrown(blackChairZ, clipRight);
-          }
-        }, crownDelay);
+        scheduleCrowns(scene, crownModel, crownMeshes, crownTimeout, disposables, result);
       }
 
       lastMoveIndex = moveIndex;
