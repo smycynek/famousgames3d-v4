@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Colors
 export const WHITE_PIECE_COLOR = 0xfff0d8; // Ivory tint
-export const BLACK_PIECE_COLOR = 0x888080; // Darker tint with black
+export const BLACK_PIECE_COLOR = 0xaa9f9a; // Lighter warm gray
 export const SCENE_BACKGROUND_COLOR = 0x0d0705; // Blended dark
 export const SCENE_BACKGROUND_COLOR_2 = 0xa3886e; // Blended warm beige
 export const LABEL_TEXT_COLOR = '#aa7700';
@@ -135,15 +135,14 @@ export function createSquareMaterials(textures: LoadedTextures): {
     light: new THREE.MeshStandardMaterial({
       map: textures.whiteGranite,
       color: 0xffffff,
-      emissive: 0x444444,
       metalness: 0.05,
-      roughness: 0.3,
+      roughness: 0.1,
     }),
     dark: new THREE.MeshStandardMaterial({
       map: textures.blueGranite,
       color: 0xccccee,
       metalness: 0.05,
-      roughness: 0.3,
+      roughness: 0.1,
     }),
   };
 }

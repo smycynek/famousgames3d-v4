@@ -91,7 +91,7 @@ export function createPieceInstance(
     color,
     map,
     metalness: 0.05,
-    roughness: 0.25,
+    roughness: 0.35,
     transparent: false,
     opacity: 1,
   });

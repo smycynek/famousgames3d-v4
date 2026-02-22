@@ -320,9 +320,8 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
         material = new THREE.MeshStandardMaterial({
           map: rotatedTexture,
           color: 0xffffff,
-          emissive: 0x444444,
           metalness: 0.05,
-          roughness: 0.3,
+          roughness: 0.7,
         });
         disposables.push(material);
       } else {
@@ -335,7 +334,7 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
           map: rotatedTexture,
           color: 0xccccee,
           metalness: 0.05,
-          roughness: 0.3,
+          roughness: 0.7,
         });
         disposables.push(material);
       }
@@ -351,7 +350,7 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
 }
 
 export function buildMolding(params: SceneBuilderParams): void {
-  const { scene, disposables } = params;
+  const { scene, textures, disposables } = params;
 
   const moldingLeg = SQUARE_HEIGHT;
   const boardLeft = -SQUARE_SIZE / 2;
@@ -374,11 +373,11 @@ export function buildMolding(params: SceneBuilderParams): void {
   });
 
   const moldingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1a4d2e,
+    map: textures.blueGranite,
+    color: 0x4a7a50,
     metalness: 0.05,
-    roughness: 0.4,
-    transparent: true,
-    opacity: 0.9,
+    roughness: 0.6,
+    transparent: false,
   });
   disposables.push(moldingMaterial);
 
