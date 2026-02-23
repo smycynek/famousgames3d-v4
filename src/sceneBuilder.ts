@@ -64,7 +64,7 @@ export function buildBase(params: SceneBuilderParams): THREE.ExtrudeGeometry {
 }
 
 export function buildTable(params: SceneBuilderParams): THREE.ExtrudeGeometry {
-  const { scene, textures, disposables } = params;
+  const { scene, textures, disposables, textureList } = params;
 
   const baseWidth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
   const baseDepth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
@@ -97,6 +97,62 @@ export function buildTable(params: SceneBuilderParams): THREE.ExtrudeGeometry {
   table.receiveShadow = true;
   table.castShadow = true;
   scene.add(table);
+
+  // Circular mat under the table — diameter 1.5 × table width, salmon tint with speckles
+  const pedestalHeight = TABLE_HEIGHT * 10;
+  const matFloorY = TABLE_TOP_Y - TABLE_HEIGHT - pedestalHeight + 0.02;
+  const matRadius = tableWidth * 1.5;
+
+  const matCanvas = document.createElement('canvas');
+  matCanvas.width = 256;
+  matCanvas.height = 256;
+  const matCtx = matCanvas.getContext('2d')!;
+  const matImageData = matCtx.createImageData(256, 256);
+  const md = matImageData.data;
+  for (let i = 0; i < md.length; i += 4) {
+    const r = Math.random();
+    if (r < 0.04) {
+      // Black fleck
+      const v = Math.floor(Math.random() * 40);
+      md[i] = v;
+      md[i + 1] = v;
+      md[i + 2] = v;
+    } else if (r < 0.1) {
+      // Grey fleck
+      const v = Math.floor(120 + Math.random() * 80);
+      md[i] = v;
+      md[i + 1] = v;
+      md[i + 2] = v;
+    } else {
+      // Desaturated salmon base with grain
+      const speckle = (Math.random() - 0.5) * 30;
+      md[i] = Math.min(255, Math.max(0, 232 + speckle));
+      md[i + 1] = Math.min(255, Math.max(0, 165 + speckle * 0.6));
+      md[i + 2] = Math.min(255, Math.max(0, 155 + speckle * 0.4));
+    }
+    md[i + 3] = 255;
+  }
+  matCtx.putImageData(matImageData, 0, 0);
+  const matTex = new THREE.CanvasTexture(matCanvas);
+  matTex.wrapS = THREE.RepeatWrapping;
+  matTex.wrapT = THREE.RepeatWrapping;
+  matTex.repeat.set(6, 6);
+  matTex.needsUpdate = true;
+  textureList.push(matTex);
+
+  const matMaterial = new THREE.MeshStandardMaterial({
+    map: matTex,
+    color: 0xe5a69a,
+    metalness: 0.05,
+    roughness: 0.8,
+  });
+  disposables.push(matMaterial);
+  const matGeometry = new THREE.CircleGeometry(matRadius, 64);
+  const matMesh = new THREE.Mesh(matGeometry, matMaterial);
+  matMesh.rotation.x = -Math.PI / 2;
+  matMesh.position.set(BOARD_CENTER, matFloorY, BOARD_CENTER);
+  matMesh.receiveShadow = true;
+  scene.add(matMesh);
 
   return tableGeometry;
 }
@@ -212,7 +268,7 @@ export function buildChairs(params: SceneBuilderParams): void {
   const legWidth = 0.7;
   const legHeight = SEAT_Y - floorY;
 
-  const createChair = (color: number, z: number, texture?: THREE.Texture) => {
+  const createChair = (color: number, z: number, texture?: THREE.Texture, backSide: 1 | -1 = 1) => {
     const mat = new THREE.MeshStandardMaterial({
       color,
       map: texture,
@@ -243,7 +299,7 @@ export function buildChairs(params: SceneBuilderParams): void {
     const seat = new THREE.Mesh(seatGeom, mat);
     seat.position.set(0, SEAT_Y - seatThickness / 2 - bevel, 0);
     seat.castShadow = true;
-    seat.receiveShadow = true;
+    seat.receiveShadow = false;
     group.add(seat);
 
     const legBevel = 0.08;
@@ -278,9 +334,31 @@ export function buildChairs(params: SceneBuilderParams): void {
       const leg = new THREE.Mesh(legGeom, mat);
       leg.position.set(lx, SEAT_Y - seatThickness / 2 - legHeight * 1.95, lz);
       leg.castShadow = true;
-      leg.receiveShadow = true;
+      leg.receiveShadow = false;
       group.add(leg);
     });
+
+    // Chair back — same width, depth, and thickness as the seat, standing vertically
+    const backShape = new THREE.Shape();
+    backShape.moveTo(-seatWidth / 2, 0);
+    backShape.lineTo(seatWidth / 2, 0);
+    backShape.lineTo(seatWidth / 2, seatDepth);
+    backShape.lineTo(-seatWidth / 2, seatDepth);
+    backShape.closePath();
+    const backGeom = new THREE.ExtrudeGeometry(backShape, {
+      depth: seatThickness - bevel,
+      bevelEnabled: true,
+      bevelThickness: bevel,
+      bevelSize: bevel,
+      bevelSegments: 2,
+      bevelOffset: 0,
+    });
+    const back = new THREE.Mesh(backGeom, mat);
+    const backZ = backSide > 0 ? seatDepth / 2 - seatThickness : -seatDepth / 2;
+    back.position.set(0, SEAT_Y, backZ);
+    back.castShadow = true;
+    back.receiveShadow = false;
+    group.add(back);
 
     group.position.set(BOARD_CENTER, 0, z);
     scene.add(group);
@@ -299,7 +377,16 @@ export function buildChairs(params: SceneBuilderParams): void {
   createChair(0xf5f5f5, WHITE_CHAIR_Z, whiteChairTex);
 
   // Black chair on black's side (low z, mirrored)
-  createChair(0x4a3728, BLACK_CHAIR_Z, textures.whiteGranite);
+  const blackChairTex = textures.whiteGranite.clone();
+  blackChairTex.repeat.set(
+    textures.whiteGranite.repeat.x * 0.125,
+    textures.whiteGranite.repeat.y * 0.125
+  );
+  blackChairTex.center.set(0.5, 0.5);
+  blackChairTex.rotation = Math.PI / 4;
+  blackChairTex.needsUpdate = true;
+  textureList.push(blackChairTex);
+  createChair(0x625a52, BLACK_CHAIR_Z, blackChairTex, -1);
 }
 
 export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
