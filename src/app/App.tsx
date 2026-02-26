@@ -1,16 +1,16 @@
 import { createSignal, createEffect, For } from 'solid-js';
 import './App.css';
 import Chessboard from './Chessboard';
-import { games, parseGame, type ParsedGame } from './assets/games';
-import pauseIcon from './assets/icons/pause.svg';
-import playIcon from './assets/icons/play.svg';
-import resetIcon from './assets/icons/reset.svg';
-import forwardIcon from './assets/icons/forward.svg';
-import backIcon from './assets/icons/back.svg';
-import whiteKingIcon from './assets/icons/whiteKing.svg';
-import blackKingIcon from './assets/icons/blackKing.svg';
-import uploadIcon from './assets/icons/upload.svg';
-import infoIcon from './assets/icons/info.svg';
+import { games, parseGame, type ParsedGame } from '../assets/games';
+import pauseIcon from '../assets/icons/pause.svg';
+import playIcon from '../assets/icons/play.svg';
+import resetIcon from '../assets/icons/reset.svg';
+import forwardIcon from '../assets/icons/forward.svg';
+import backIcon from '../assets/icons/back.svg';
+import whiteKingIcon from '../assets/icons/whiteKing.svg';
+import blackKingIcon from '../assets/icons/blackKing.svg';
+import uploadIcon from '../assets/icons/upload.svg';
+import infoIcon from '../assets/icons/info.svg';
 
 const NORMAL_MOVE_DELAY = 1500;
 const CAPTURE_MOVE_DELAY = 3000; // wait for capture animation to finish

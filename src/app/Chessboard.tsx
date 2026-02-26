@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Chess, type Square } from 'chess.js';
 import gsap from 'gsap';
-import type { ParsedGame } from './assets/games';
+import type { ParsedGame } from '../assets/games';
 import { buildLights } from './lighting';
 import {
   WHITE_PIECE_COLOR,
@@ -13,23 +13,20 @@ import {
   type LoadedTextures,
   SCENE_BACKGROUND_COLOR,
   SCENE_BACKGROUND_COLOR_2,
+  createGradientBackground,
 } from './materials';
+import { SQUARE_SIZE, SQUARE_HEIGHT, type SceneBuilderParams } from './scene/sceneBuilder';
+import { buildBase } from './scene/boardBase';
+import { buildSquares, buildMolding, buildLabels } from './scene/board';
+import { buildTable } from './scene/table';
+import { buildMat } from './scene/mat';
+import { buildPedestal } from './scene/pedestal';
+import { buildFloor } from './scene/floor';
+import { buildWater } from './scene/water';
+import { buildChairs } from './scene/chairs';
+import { loadPieceModels } from './scene/pieces';
+import { loadCrownModel } from './scene/crown';
 import {
-  SQUARE_SIZE,
-  SQUARE_HEIGHT,
-  buildBase,
-  buildTable,
-  buildPedestal,
-  buildFloor,
-  buildChairs,
-  buildSquares,
-  buildMolding,
-  buildLabels,
-  type SceneBuilderParams,
-} from './sceneBuilder';
-import {
-  PIECE_TYPES,
-  PIECE_BASE_SIZE,
   ANIMATION_DURATION,
   KNIGHT_HOP_HEIGHT,
   PIECE_SCALES,
@@ -37,15 +34,13 @@ import {
   type PieceType,
   type PieceModels,
   type PieceInfo,
-  createGradientBackground,
-  scalePieceToFit,
   createPieceInstance,
   placePiece,
   toSquareName,
   fromSquareName,
 } from './pieceUtils';
 import { getGraveyardPosition } from './graveyardUtils';
-import { clearCrowns, scheduleCrowns } from './crownManager';
+import { clearCrowns, scheduleCrowns } from './scene/crown';
 
 interface ChessboardProps {
   game?: ParsedGame | null;
@@ -392,29 +387,20 @@ function Chessboard(props: ChessboardProps) {
     const basePath = import.meta.env.BASE_URL + 'pieces/';
 
     const loadPieces = async () => {
-      const models: Partial<PieceModels> = {};
-
-      for (const pieceType of PIECE_TYPES) {
-        try {
-          const gltf = await loader.loadAsync(`${basePath}${pieceType}.glb`);
-          const model = gltf.scene;
-          scalePieceToFit(model, PIECE_BASE_SIZE);
-          models[pieceType] = model;
-          console.log(`Loaded and scaled ${pieceType} model`);
-        } catch (error) {
-          console.error(`Failed to load ${pieceType}:`, error);
-        }
-      }
+      const models = await loadPieceModels(loader, basePath);
 
       // Load crown model
+      const crownBasePath = import.meta.env.BASE_URL + 'other/';
+      crownModel = await loadCrownModel(loader, crownBasePath);
+
+      // Load chair model and place chairs
       try {
-        const crownBasePath = import.meta.env.BASE_URL + 'other/';
-        const crownGltf = await loader.loadAsync(`${crownBasePath}crown.gltf`);
-        crownModel = crownGltf.scene;
-        scalePieceToFit(crownModel, PIECE_BASE_SIZE * 2.5);
-        console.log('Loaded crown model');
+        const chairBasePath = import.meta.env.BASE_URL + 'other/';
+        const chairGltf = await loader.loadAsync(`${chairBasePath}chair.gltf`);
+        buildChairs(builderParams, chairGltf.scene);
+        console.log('Loaded chair model');
       } catch (error) {
-        console.error('Failed to load crown:', error);
+        console.error('Failed to load chair:', error);
       }
 
       setPieceModels(models as PieceModels);
@@ -500,6 +486,14 @@ function Chessboard(props: ChessboardProps) {
       lastMoveIndex = moveIndex;
     });
 
+    // Build scene elements
+    const builderParams: SceneBuilderParams = {
+      scene,
+      textures: loadedTextures!,
+      disposables,
+      textureList,
+    };
+
     loadPieces();
     const gradientBackground = createGradientBackground(
       SCENE_BACKGROUND_COLOR,
@@ -546,19 +540,12 @@ function Chessboard(props: ChessboardProps) {
     const lights = buildLights();
     lights.forEach((light) => scene.add(light));
 
-    // Build scene elements
-    const builderParams: SceneBuilderParams = {
-      scene,
-      textures: loadedTextures!,
-      disposables,
-      textureList,
-    };
-
     const baseGeometry = buildBase(builderParams);
     const tableGeometry = buildTable(builderParams);
+    buildMat(builderParams);
     buildPedestal(builderParams);
     buildFloor(builderParams);
-    buildChairs(builderParams);
+    buildWater(builderParams);
     const squareGeometry = buildSquares(builderParams);
     buildMolding(builderParams);
     const labelGeometry = buildLabels(builderParams);

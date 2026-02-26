@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Colors
 export const WHITE_PIECE_COLOR = 0xfff0d8; // Ivory tint
-export const BLACK_PIECE_COLOR = 0xaa9f9a; // Lighter warm gray
+export const BLACK_PIECE_COLOR = 0xbe8585; // Lighter warm gray with faint red tint
 export const SCENE_BACKGROUND_COLOR = 0x0d0705; // Blended dark
 export const SCENE_BACKGROUND_COLOR_2 = 0xa3886e; // Blended warm beige
 export const LABEL_TEXT_COLOR = '#aa7700';
@@ -167,4 +167,29 @@ export function createLabelMaterial(texture: THREE.CanvasTexture): THREE.MeshBas
     map: texture,
     transparent: true,
   });
+}
+
+// Create gradient background texture
+export function createGradientBackground(
+  topColor: number,
+  bottomColor: number
+): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+
+  const topColorStr = '#' + topColor.toString(16).padStart(6, '0');
+  const bottomColorStr = '#' + bottomColor.toString(16).padStart(6, '0');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, topColorStr);
+  gradient.addColorStop(1, bottomColorStr);
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
 }
