@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TABLE_HEIGHT, BOARD_CENTER, TABLE_TOP_Y, type SceneBuilderParams } from './sceneBuilder';
 
-export function buildWater(params: SceneBuilderParams): void {
+export function buildWater(params: SceneBuilderParams): THREE.PlaneGeometry {
   const { scene, disposables } = params;
 
   const pedestalHeight = TABLE_HEIGHT * 10;
@@ -22,4 +22,5 @@ export function buildWater(params: SceneBuilderParams): void {
   water.position.set(BOARD_CENTER, floorY - 0.5, BOARD_CENTER);
   water.receiveShadow = false;
   scene.add(water);
+  return waterGeometry;
 }

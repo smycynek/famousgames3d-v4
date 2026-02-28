@@ -9,7 +9,7 @@ import {
   type SceneBuilderParams,
 } from './sceneBuilder';
 
-export function buildMat(params: SceneBuilderParams): void {
+export function buildFloorMat(params: SceneBuilderParams): THREE.CircleGeometry {
   const { scene, disposables, textureList } = params;
 
   const baseWidth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
@@ -70,4 +70,5 @@ export function buildMat(params: SceneBuilderParams): void {
   matMesh.position.set(BOARD_CENTER, matFloorY, BOARD_CENTER);
   matMesh.receiveShadow = true;
   scene.add(matMesh);
+  return matGeometry;
 }

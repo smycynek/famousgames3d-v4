@@ -16,14 +16,14 @@ import {
   createGradientBackground,
 } from './materials';
 import { SQUARE_SIZE, SQUARE_HEIGHT, type SceneBuilderParams } from './scene/sceneBuilder';
-import { buildBase } from './scene/boardBase';
+import { buildBoardBase } from './scene/boardBase';
 import { buildSquares, buildMolding, buildLabels } from './scene/board';
 import { buildTable } from './scene/table';
-import { buildMat } from './scene/mat';
+import { buildFloorMat } from './scene/floorMat';
 import { buildPedestal } from './scene/pedestal';
 import { buildFloor } from './scene/floor';
 import { buildWater } from './scene/water';
-import { buildChairs } from './scene/chairs';
+import { buildChairs, loadChairModel } from './scene/chairs';
 import { loadPieceModels } from './scene/pieces';
 import { loadCrownModel } from './scene/crown';
 import {
@@ -57,10 +57,11 @@ function Chessboard(props: ChessboardProps) {
   const piecesBySquare = new Map<string, PieceInfo>();
   let lastMoveIndex = -2; // Track last processed move index
   let currentChess: Chess | null = null;
-  const disposables: THREE.Material[] = [];
+  const materialList: THREE.Material[] = [];
   const textureList: THREE.Texture[] = [];
   const [pieceModels, setPieceModels] = createSignal<PieceModels | null>(null);
   let crownModel: THREE.Group | null = null;
+  let chairModel: THREE.Group | null = null;
   const crownMeshes: THREE.Group[] = [];
   const crownTimeout: { current: ReturnType<typeof setTimeout> | null } = { current: null };
 
@@ -103,7 +104,7 @@ function Chessboard(props: ChessboardProps) {
       const piece = createPieceInstance(
         pm[pieceType],
         color,
-        disposables,
+        materialList,
         PIECE_SCALES[pieceType],
         texture
       );
@@ -130,7 +131,7 @@ function Chessboard(props: ChessboardProps) {
       const piece = createPieceInstance(
         pm[pieceType],
         color,
-        disposables,
+        materialList,
         PIECE_SCALES[pieceType],
         texture
       );
@@ -382,34 +383,36 @@ function Chessboard(props: ChessboardProps) {
       currentChess = chess;
     };
 
-    // Load chess piece models
-    const loader = new GLTFLoader();
-    const basePath = import.meta.env.BASE_URL + 'pieces/';
-
-    const loadPieces = async () => {
-      const models = await loadPieceModels(loader, basePath);
+    const loadAllModels = async () => {
+      // Load chess piece models
+      const loader = new GLTFLoader();
+      const pieceModelBasePath = import.meta.env.BASE_URL + 'pieces/';
+      const otherModelBasePath = import.meta.env.BASE_URL + 'other/';
+      const pieceModels = await loadPieceModels(loader, pieceModelBasePath);
 
       // Load crown model
-      const crownBasePath = import.meta.env.BASE_URL + 'other/';
-      crownModel = await loadCrownModel(loader, crownBasePath);
+      crownModel = await loadCrownModel(loader, otherModelBasePath);
 
       // Load chair model and place chairs
       try {
-        const chairBasePath = import.meta.env.BASE_URL + 'other/';
-        const chairGltf = await loader.loadAsync(`${chairBasePath}chair.gltf`);
-        buildChairs(builderParams, chairGltf.scene);
+        const chairGltf = await loadChairModel(loader, otherModelBasePath);
+        if (!chairGltf) {
+          throw new Error('Chair model failed to load');
+        }
+        chairModel = chairGltf.scene;
+        buildChairs(builderParams, chairModel);
         console.log('Loaded chair model');
       } catch (error) {
         console.error('Failed to load chair:', error);
       }
 
-      setPieceModels(models as PieceModels);
+      setPieceModels(pieceModels as PieceModels);
       console.log('All chess pieces loaded');
       props.onLoaded?.();
 
       // Set up the starting position
       const chess = new Chess();
-      setupBoardFromChess(chess, models as PieceModels);
+      setupBoardFromChess(chess, pieceModels as PieceModels);
       lastMoveIndex = -1;
     };
 
@@ -480,7 +483,7 @@ function Chessboard(props: ChessboardProps) {
       // Place crown(s) on winner's chair at the last move
       if (crownModel && moveIndex === moves.length - 1) {
         const result = parsedGame?.tags?.Result;
-        scheduleCrowns(scene, crownModel, crownMeshes, crownTimeout, disposables, result);
+        scheduleCrowns(scene, crownModel, crownMeshes, crownTimeout, materialList, result);
       }
 
       lastMoveIndex = moveIndex;
@@ -490,11 +493,11 @@ function Chessboard(props: ChessboardProps) {
     const builderParams: SceneBuilderParams = {
       scene,
       textures: loadedTextures!,
-      disposables,
+      disposables: materialList,
       textureList,
     };
 
-    loadPieces();
+    loadAllModels();
     const gradientBackground = createGradientBackground(
       SCENE_BACKGROUND_COLOR,
       SCENE_BACKGROUND_COLOR_2
@@ -540,14 +543,14 @@ function Chessboard(props: ChessboardProps) {
     const lights = buildLights();
     lights.forEach((light) => scene.add(light));
 
-    const baseGeometry = buildBase(builderParams);
+    const baseGeometry = buildBoardBase(builderParams);
     const tableGeometry = buildTable(builderParams);
-    buildMat(builderParams);
-    buildPedestal(builderParams);
-    buildFloor(builderParams);
-    buildWater(builderParams);
+    const pedestalGeometry = buildPedestal(builderParams);
+    const floorMatGeometry = buildFloorMat(builderParams);
+    const floorGeometry = buildFloor(builderParams);
+    const waterGeometry = buildWater(builderParams);
     const squareGeometry = buildSquares(builderParams);
-    buildMolding(builderParams);
+    const moldingGeometries = buildMolding(builderParams);
     const labelGeometry = buildLabels(builderParams);
 
     // Handle window resize
@@ -568,6 +571,20 @@ function Chessboard(props: ChessboardProps) {
     animate();
 
     // Cleanup
+    // Dispose geometries and original GLTF materials from a loaded model
+    const disposeModel = (model: THREE.Group) => {
+      model.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m: THREE.Material) => m.dispose());
+          } else if (child.material) {
+            child.material.dispose();
+          }
+        }
+      });
+    };
+
     onCleanup(() => {
       window.removeEventListener('resize', handleResize);
       if (animationId) cancelAnimationFrame(animationId);
@@ -576,9 +593,19 @@ function Chessboard(props: ChessboardProps) {
       squareGeometry.dispose();
       baseGeometry.dispose();
       tableGeometry.dispose();
+      pedestalGeometry.dispose();
+      floorMatGeometry.dispose();
+      floorGeometry.dispose();
+      waterGeometry.dispose();
+      moldingGeometries.forEach((g) => g.dispose());
       labelGeometry.dispose();
-      disposables.forEach((m) => m.dispose());
+      materialList.forEach((m) => m.dispose());
       textureList.forEach((t) => t.dispose());
+      // Dispose piece model geometries and original GLTF materials
+      const pm = pieceModels();
+      if (pm) Object.values(pm).forEach(disposeModel);
+      if (crownModel) disposeModel(crownModel);
+      if (chairModel) disposeModel(chairModel);
     });
   });
 

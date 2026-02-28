@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   BOARD_SIZE,
   SQUARE_SIZE,
@@ -10,6 +11,17 @@ import {
   BLACK_CHAIR_Z,
   type SceneBuilderParams,
 } from './sceneBuilder';
+
+export async function loadChairModel(loader: GLTFLoader, basePath: string): Promise<GLTF | null> {
+  try {
+    const chairGltf = await loader.loadAsync(`${basePath}chair.gltf`);
+    console.log('Loaded chair gltf');
+    return chairGltf;
+  } catch (error) {
+    console.error('Failed to load gltf:', error);
+    return null;
+  }
+}
 
 export function buildChairs(params: SceneBuilderParams, chairModel: THREE.Group): void {
   const { scene, textures, disposables, textureList } = params;

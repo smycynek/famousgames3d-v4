@@ -58,8 +58,9 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
   return squareGeometry;
 }
 
-export function buildMolding(params: SceneBuilderParams): void {
+export function buildMolding(params: SceneBuilderParams): THREE.BufferGeometry[] {
   const { scene, textures, disposables } = params;
+  const geometries: THREE.BufferGeometry[] = [];
 
   const moldingLeg = SQUARE_HEIGHT;
   const boardLeft = -SQUARE_SIZE / 2;
@@ -80,6 +81,7 @@ export function buildMolding(params: SceneBuilderParams): void {
     depth: boardLength,
     bevelEnabled: false,
   });
+  geometries.push(moldingGeometry);
 
   const moldingMaterial = new THREE.MeshStandardMaterial({
     map: textures.blueGranite,
@@ -112,6 +114,7 @@ export function buildMolding(params: SceneBuilderParams): void {
     geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
     geom.setIndex([0, 1, 2, 0, 2, 1]);
     geom.computeVertexNormals();
+    geometries.push(geom);
     const cap = new THREE.Mesh(geom, moldingMaterial);
     cap.castShadow = true;
     cap.receiveShadow = true;
@@ -170,6 +173,8 @@ export function buildMolding(params: SceneBuilderParams): void {
     tp,
     boardBack,
   ]);
+
+  return geometries;
 }
 
 export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {

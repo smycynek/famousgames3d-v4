@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TABLE_HEIGHT, BOARD_CENTER, TABLE_TOP_Y, type SceneBuilderParams } from './sceneBuilder';
 
-export function buildFloor(params: SceneBuilderParams): void {
+export function buildFloor(params: SceneBuilderParams): THREE.CircleGeometry {
   const { scene, disposables, textureList } = params;
 
   const pedestalHeight = TABLE_HEIGHT * 10;
@@ -49,4 +49,5 @@ export function buildFloor(params: SceneBuilderParams): void {
   floor.position.set(BOARD_CENTER, floorY, BOARD_CENTER);
   floor.receiveShadow = true;
   scene.add(floor);
+  return floorGeometry;
 }

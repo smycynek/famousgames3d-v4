@@ -7,7 +7,7 @@ import {
   type SceneBuilderParams,
 } from './sceneBuilder';
 
-export function buildPedestal(params: SceneBuilderParams): void {
+export function buildPedestal(params: SceneBuilderParams): THREE.CylinderGeometry {
   const { scene, textures, disposables, textureList } = params;
 
   const pedestalRadius = SQUARE_SIZE;
@@ -40,4 +40,5 @@ export function buildPedestal(params: SceneBuilderParams): void {
   pedestal.castShadow = true;
   pedestal.receiveShadow = true;
   scene.add(pedestal);
+  return pedestalGeometry;
 }
