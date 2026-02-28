@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const gamesDir = path.join(__dirname, 'assets', 'games');
+const gamesDir = path.join(__dirname, '..', 'assets', 'games');
 
 const pgnFiles = fs
   .readdirSync(gamesDir)

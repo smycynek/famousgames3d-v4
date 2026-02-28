@@ -1,6 +1,23 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BOARD_SIZE, SQUARE_SIZE, MARGIN, SEAT_Y, BOARD_CENTER } from './sceneBuilder';
-import { ANIMATION_DURATION } from './pieceUtils';
+import { ANIMATION_DURATION, PIECE_BASE_SIZE, scalePieceToFit } from '../pieceUtils';
+
+export async function loadCrownModel(
+  loader: GLTFLoader,
+  basePath: string
+): Promise<THREE.Group | null> {
+  try {
+    const crownGltf = await loader.loadAsync(`${basePath}crown.gltf`);
+    const crownModel = crownGltf.scene;
+    scalePieceToFit(crownModel, PIECE_BASE_SIZE * 2.5);
+    console.log('Loaded crown model');
+    return crownModel;
+  } catch (error) {
+    console.error('Failed to load crown:', error);
+    return null;
+  }
+}
 
 export function clearCrowns(
   scene: THREE.Scene,

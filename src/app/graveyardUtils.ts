@@ -1,4 +1,4 @@
-import { SQUARE_SIZE, BOARD_SIZE, TABLE_TOP_Y, BEVEL_SIZE } from './sceneBuilder';
+import { SQUARE_SIZE, BOARD_SIZE, TABLE_TOP_Y, BEVEL_SIZE } from './scene/sceneBuilder';
 
 export function getGraveyardPosition(
   isBlack: boolean,

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SQUARE_SIZE, SQUARE_HEIGHT } from './sceneBuilder';
+import { SQUARE_SIZE, SQUARE_HEIGHT } from './scene/sceneBuilder';
 
 export const PIECE_TYPES = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'] as const;
 export const PIECE_BASE_SIZE = SQUARE_SIZE * 0.6 * 2 * 0.8; // 60% of square width, scaled
@@ -35,31 +35,6 @@ export const PIECE_TYPE_MAP: Record<string, PieceType> = {
   k: 'king',
 };
 
-// Create gradient background texture
-export function createGradientBackground(
-  topColor: number,
-  bottomColor: number
-): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 2;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d')!;
-
-  const topColorStr = '#' + topColor.toString(16).padStart(6, '0');
-  const bottomColorStr = '#' + bottomColor.toString(16).padStart(6, '0');
-
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, topColorStr);
-  gradient.addColorStop(1, bottomColorStr);
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export function scalePieceToFit(model: THREE.Group, targetBaseSize: number): void {
   const box = new THREE.Box3().setFromObject(model);
   const size = new THREE.Vector3();
@@ -91,7 +66,7 @@ export function createPieceInstance(
     color,
     map,
     metalness: 0.05,
-    roughness: 0.25,
+    roughness: 0.35,
     transparent: false,
     opacity: 1,
   });
