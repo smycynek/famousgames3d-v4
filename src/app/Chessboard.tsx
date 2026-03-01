@@ -14,13 +14,14 @@ import {
   SCENE_BACKGROUND_COLOR,
   SCENE_BACKGROUND_COLOR_2,
   createGradientBackground,
+  materialsToDispose,
+  texturesToDispose,
 } from './materials';
 import { SQUARE_SIZE, SQUARE_HEIGHT, type SceneBuilderParams } from './scene/sceneBuilder';
 import { buildBoardBase } from './scene/boardBase';
 import { buildSquares, buildMolding, buildLabels } from './scene/board';
-import { buildTable } from './scene/table';
+import { buildTable, buildPedestal } from './scene/table';
 import { buildFloorMat } from './scene/floorMat';
-import { buildPedestal } from './scene/pedestal';
 import { buildFloor } from './scene/floor';
 import { buildWater } from './scene/water';
 import { buildChairs, loadChairModel } from './scene/chairs';
@@ -57,8 +58,6 @@ function Chessboard(props: ChessboardProps) {
   const piecesBySquare = new Map<string, PieceInfo>();
   let lastMoveIndex = -2; // Track last processed move index
   let currentChess: Chess | null = null;
-  const materialList: THREE.Material[] = [];
-  const textureList: THREE.Texture[] = [];
   const [pieceModels, setPieceModels] = createSignal<PieceModels | null>(null);
   let crownModel: THREE.Group | null = null;
   let chairModel: THREE.Group | null = null;
@@ -73,8 +72,6 @@ function Chessboard(props: ChessboardProps) {
 
     // Load all textures
     loadedTextures = loadTextures();
-    Object.values(loadedTextures).forEach((t) => textureList.push(t));
-
     // Track captured pieces
     const capturedWhitePieces: THREE.Group[] = [];
     const capturedBlackPieces: THREE.Group[] = [];
@@ -101,13 +98,7 @@ function Chessboard(props: ChessboardProps) {
     ): PieceInfo => {
       const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
       const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
-      const piece = createPieceInstance(
-        pm[pieceType],
-        color,
-        materialList,
-        PIECE_SCALES[pieceType],
-        texture
-      );
+      const piece = createPieceInstance(pm[pieceType], color, PIECE_SCALES[pieceType], texture);
       placePiece(piece, col, row, scene, isBlack);
       // Rotate knights on Z axis
       if (pieceType === 'knight') {
@@ -128,13 +119,7 @@ function Chessboard(props: ChessboardProps) {
 
       const texture = isBlack ? loadedTextures?.darkWood : loadedTextures?.lightWood;
       const color = isBlack ? BLACK_PIECE_COLOR : WHITE_PIECE_COLOR;
-      const piece = createPieceInstance(
-        pm[pieceType],
-        color,
-        materialList,
-        PIECE_SCALES[pieceType],
-        texture
-      );
+      const piece = createPieceInstance(pm[pieceType], color, PIECE_SCALES[pieceType], texture);
 
       piece.position.set(x, y, z);
       piece.rotation.z = Math.PI / 2;
@@ -401,7 +386,6 @@ function Chessboard(props: ChessboardProps) {
         }
         chairModel = chairGltf.scene;
         buildChairs(builderParams, chairModel);
-        console.log('Loaded chair model');
       } catch (error) {
         console.error('Failed to load chair:', error);
       }
@@ -483,7 +467,7 @@ function Chessboard(props: ChessboardProps) {
       // Place crown(s) on winner's chair at the last move
       if (crownModel && moveIndex === moves.length - 1) {
         const result = parsedGame?.tags?.Result;
-        scheduleCrowns(scene, crownModel, crownMeshes, crownTimeout, materialList, result);
+        scheduleCrowns(scene, crownModel, crownMeshes, crownTimeout, result);
       }
 
       lastMoveIndex = moveIndex;
@@ -492,9 +476,7 @@ function Chessboard(props: ChessboardProps) {
     // Build scene elements
     const builderParams: SceneBuilderParams = {
       scene,
-      textures: loadedTextures!,
-      disposables: materialList,
-      textureList,
+      loadedTextures: loadedTextures!,
     };
 
     loadAllModels();
@@ -503,7 +485,6 @@ function Chessboard(props: ChessboardProps) {
       SCENE_BACKGROUND_COLOR_2
     );
     scene.background = gradientBackground;
-    textureList.push(gradientBackground);
 
     // Camera setup
     const isMobile = containerRef.clientWidth < 768;
@@ -599,8 +580,8 @@ function Chessboard(props: ChessboardProps) {
       waterGeometry.dispose();
       moldingGeometries.forEach((g) => g.dispose());
       labelGeometry.dispose();
-      materialList.forEach((m) => m.dispose());
-      textureList.forEach((t) => t.dispose());
+      materialsToDispose.forEach((m) => m.dispose());
+      texturesToDispose.forEach((t) => t.dispose());
       // Dispose piece model geometries and original GLTF materials
       const pm = pieceModels();
       if (pm) Object.values(pm).forEach(disposeModel);

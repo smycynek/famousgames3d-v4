@@ -11,6 +11,7 @@ import {
   BLACK_CHAIR_Z,
   type SceneBuilderParams,
 } from './sceneBuilder';
+import { BLACK_CHAIR_TINT, createChairMaterial, WHITE_CHAIR_TINT } from '../materials';
 
 export async function loadChairModel(loader: GLTFLoader, basePath: string): Promise<GLTF | null> {
   try {
@@ -24,17 +25,10 @@ export async function loadChairModel(loader: GLTFLoader, basePath: string): Prom
 }
 
 export function buildChairs(params: SceneBuilderParams, chairModel: THREE.Group): void {
-  const { scene, textures, disposables, textureList } = params;
-
+  const { scene, loadedTextures } = params;
   const floorY = TABLE_TOP_Y - TABLE_HEIGHT - TABLE_HEIGHT * 10;
   const targetWidth = (BOARD_SIZE * SQUARE_SIZE + MARGIN * 2) * 2.0 * 0.5 * 2 * 0.585;
-
-  const createChair = (
-    color: number,
-    z: number,
-    texture: THREE.Texture | undefined,
-    rotateY: number
-  ) => {
+  const createChair = (z: number, material: THREE.MeshStandardMaterial, rotateY: number) => {
     const clone = chairModel.clone();
 
     // Scale to target width
@@ -48,17 +42,9 @@ export function buildChairs(params: SceneBuilderParams, chairModel: THREE.Group)
     // Compute bottom of scaled model for correct Y floor placement
     const scaledBox = new THREE.Box3().setFromObject(clone);
 
-    const mat = new THREE.MeshStandardMaterial({
-      color,
-      map: texture,
-      metalness: 0.05,
-      roughness: 0.4,
-    });
-    disposables.push(mat);
-
     clone.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.material = mat;
+        child.material = material;
         child.castShadow = true;
         child.receiveShadow = false;
       }
@@ -69,28 +55,8 @@ export function buildChairs(params: SceneBuilderParams, chairModel: THREE.Group)
     scene.add(clone);
   };
 
-  // White chair on white's side (high z)
-  const whiteChairTex = textures.whiteGranite.clone();
-  whiteChairTex.repeat.set(
-    textures.whiteGranite.repeat.x * 0.125,
-    textures.whiteGranite.repeat.y * 0.125
-  );
-  whiteChairTex.center.set(0.5, 0.5);
-  whiteChairTex.rotation = Math.PI / 4;
-  whiteChairTex.needsUpdate = true;
-  textureList.push(whiteChairTex);
-
-  // Black chair on black's side (low z, facing opposite direction)
-  const blackChairTex = textures.whiteGranite.clone();
-  blackChairTex.repeat.set(
-    textures.whiteGranite.repeat.x * 0.125,
-    textures.whiteGranite.repeat.y * 0.125
-  );
-  blackChairTex.center.set(0.5, 0.5);
-  blackChairTex.rotation = Math.PI / 4;
-  blackChairTex.needsUpdate = true;
-  textureList.push(blackChairTex);
-
-  createChair(0xf5f5f5, WHITE_CHAIR_Z, whiteChairTex, 0);
-  createChair(0x625a52, BLACK_CHAIR_Z, blackChairTex, Math.PI);
+  const whiteChairMaterial = createChairMaterial(WHITE_CHAIR_TINT, loadedTextures.whiteGranite);
+  const blackChairMaterial = createChairMaterial(BLACK_CHAIR_TINT, loadedTextures.whiteGranite);
+  createChair(WHITE_CHAIR_Z, whiteChairMaterial, 0);
+  createChair(BLACK_CHAIR_Z, blackChairMaterial, Math.PI);
 }
