@@ -19,7 +19,5 @@ export const SEAT_Y = TABLE_TOP_Y - 5.0;
 
 export interface SceneBuilderParams {
   scene: THREE.Scene;
-  textures: LoadedTextures;
-  disposables: THREE.Material[];
-  textureList: THREE.Texture[];
+  loadedTextures: LoadedTextures;
 }

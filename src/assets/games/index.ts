@@ -29,13 +29,3 @@ export const games: ParsedGame[] = Object.entries(pgnModules).map(([path, conten
   const name = path.replace('./', '').replace('.pgn', '');
   return parseGame(name, content);
 });
-
-// Get a game by name
-export function getGame(name: string): ParsedGame | undefined {
-  return games.find((g) => g.name === name);
-}
-
-// Get all game names
-export function getGameNames(): string[] {
-  return games.map((g) => g.name);
-}

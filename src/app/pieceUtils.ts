@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SQUARE_SIZE, SQUARE_HEIGHT } from './scene/sceneBuilder';
+import { createRandomizedPieceMaterial } from './materials';
 
 export const PIECE_TYPES = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'] as const;
 export const PIECE_BASE_SIZE = SQUARE_SIZE * 0.6 * 2 * 0.8; // 60% of square width, scaled
@@ -50,27 +51,11 @@ export function scalePieceToFit(model: THREE.Group, targetBaseSize: number): voi
 export function createPieceInstance(
   model: THREE.Group,
   color: number,
-  disposables: THREE.Material[],
   scale: number = 1,
   texture?: THREE.Texture
 ): THREE.Group {
   const clone = model.clone();
-  let map = texture;
-  if (texture) {
-    map = texture.clone();
-    map.center.set(0.5, 0.5);
-    map.rotation = Math.random() * Math.PI * 2;
-    map.needsUpdate = true;
-  }
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    map,
-    metalness: 0.05,
-    roughness: 0.35,
-    transparent: false,
-    opacity: 1,
-  });
-  disposables.push(material);
+  const material = createRandomizedPieceMaterial(color, texture);
 
   clone.traverse((child) => {
     if (child instanceof THREE.Mesh) {

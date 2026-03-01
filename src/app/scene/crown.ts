@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BOARD_SIZE, SQUARE_SIZE, MARGIN, SEAT_Y, BOARD_CENTER } from './sceneBuilder';
 import { ANIMATION_DURATION, PIECE_BASE_SIZE, scalePieceToFit } from '../pieceUtils';
+import { createCrownMaterial } from '../materials';
 
 export async function loadCrownModel(
   loader: GLTFLoader,
@@ -37,7 +38,6 @@ export function scheduleCrowns(
   crownModel: THREE.Group,
   crownMeshes: THREE.Group[],
   crownTimeout: { current: ReturnType<typeof setTimeout> | null },
-  disposables: THREE.Material[],
   result: string | undefined
 ): void {
   const chairOffset = (BOARD_SIZE - 1) * SQUARE_SIZE + SQUARE_SIZE / 2 + MARGIN + 2.5;
@@ -46,14 +46,7 @@ export function scheduleCrowns(
 
   const placeCrown = (z: number, clipPlane?: THREE.Plane) => {
     const crown = crownModel.clone();
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xffd700,
-      metalness: 0.6,
-      roughness: 0.2,
-      side: clipPlane ? THREE.DoubleSide : THREE.FrontSide,
-      clippingPlanes: clipPlane ? [clipPlane] : [],
-    });
-    disposables.push(mat);
+    const mat = createCrownMaterial(clipPlane);
     crown.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.material = mat;

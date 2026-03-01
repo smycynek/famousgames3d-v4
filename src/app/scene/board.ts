@@ -6,13 +6,22 @@ import {
   MARGIN,
   type SceneBuilderParams,
 } from './sceneBuilder';
-import { createTextTexture, createLabelMaterial } from '../materials';
+import {
+  createTextTexture,
+  createLabelMaterial,
+  createMoldingMaterial,
+  createRandomizedSquareMaterial,
+  texturesToDispose,
+  materialsToDispose,
+  LIGHT_SQUARE_TINT,
+  DARK_SQUARE_TINT,
+} from '../materials';
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
 export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
-  const { scene, textures, disposables } = params;
+  const { scene, loadedTextures } = params;
 
   const squareGeometry = new THREE.BoxGeometry(SQUARE_SIZE, SQUARE_HEIGHT, SQUARE_SIZE);
 
@@ -21,31 +30,9 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
       const isLight = (row + col) % 2 === 0;
       let material;
       if (isLight) {
-        const rotatedTexture = textures.whiteGranite.clone();
-        rotatedTexture.center.set(0.5, 0.5);
-        rotatedTexture.rotation = Math.random() * Math.PI * 2;
-        rotatedTexture.offset.set(Math.random(), Math.random());
-        rotatedTexture.needsUpdate = true;
-        material = new THREE.MeshStandardMaterial({
-          map: rotatedTexture,
-          color: 0xffffff,
-          metalness: 0.05,
-          roughness: 0.7,
-        });
-        disposables.push(material);
+        material = createRandomizedSquareMaterial(loadedTextures.whiteGranite, LIGHT_SQUARE_TINT);
       } else {
-        const rotatedTexture = textures.blueGranite.clone();
-        rotatedTexture.center.set(0.5, 0.5);
-        rotatedTexture.rotation = Math.random() * Math.PI * 2;
-        rotatedTexture.offset.set(Math.random(), Math.random());
-        rotatedTexture.needsUpdate = true;
-        material = new THREE.MeshStandardMaterial({
-          map: rotatedTexture,
-          color: 0xccccee,
-          metalness: 0.05,
-          roughness: 0.7,
-        });
-        disposables.push(material);
+        material = createRandomizedSquareMaterial(loadedTextures.blueGranite, DARK_SQUARE_TINT);
       }
       const square = new THREE.Mesh(squareGeometry, material);
       square.position.set(col * SQUARE_SIZE, 0, row * SQUARE_SIZE);
@@ -59,7 +46,7 @@ export function buildSquares(params: SceneBuilderParams): THREE.BoxGeometry {
 }
 
 export function buildMolding(params: SceneBuilderParams): THREE.BufferGeometry[] {
-  const { scene, textures, disposables } = params;
+  const { scene, loadedTextures } = params;
   const geometries: THREE.BufferGeometry[] = [];
 
   const moldingLeg = SQUARE_HEIGHT;
@@ -83,14 +70,7 @@ export function buildMolding(params: SceneBuilderParams): THREE.BufferGeometry[]
   });
   geometries.push(moldingGeometry);
 
-  const moldingMaterial = new THREE.MeshStandardMaterial({
-    map: textures.blueGranite,
-    color: 0x4a7a50,
-    metalness: 0.05,
-    roughness: 0.6,
-    transparent: false,
-  });
-  disposables.push(moldingMaterial);
+  const moldingMaterial = createMoldingMaterial(loadedTextures.blueGranite);
 
   const moldingSides: { rotY: number; pos: [number, number, number] }[] = [
     { rotY: Math.PI / 2, pos: [boardLeft, boardBottom, boardFront] },
@@ -178,7 +158,7 @@ export function buildMolding(params: SceneBuilderParams): THREE.BufferGeometry[]
 }
 
 export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {
-  const { scene, disposables, textureList } = params;
+  const { scene } = params;
 
   const labelGeometry = new THREE.PlaneGeometry(0.5, 0.5);
   const labelNudge = 0.045;
@@ -186,9 +166,9 @@ export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {
   // File labels (a-h) along bottom edge (white's side)
   FILES.forEach((file, i) => {
     const texture = createTextTexture(file);
-    textureList.push(texture);
+    texturesToDispose.push(texture);
     const material = createLabelMaterial(texture);
-    disposables.push(material);
+    materialsToDispose.push(material);
     const label = new THREE.Mesh(labelGeometry, material);
     label.rotation.x = -Math.PI / 2;
     label.position.set(
@@ -202,9 +182,9 @@ export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {
   // File labels (a-h) along top edge (black's side)
   FILES.forEach((file, i) => {
     const texture = createTextTexture(file);
-    textureList.push(texture);
+    texturesToDispose.push(texture);
     const material = createLabelMaterial(texture);
-    disposables.push(material);
+    materialsToDispose.push(material);
     const label = new THREE.Mesh(labelGeometry, material);
     label.rotation.x = -Math.PI / 2;
     label.rotation.z = Math.PI;
@@ -219,9 +199,9 @@ export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {
   // Rank labels (1-8) along left edge (white's side)
   RANKS.forEach((rank, i) => {
     const texture = createTextTexture(rank);
-    textureList.push(texture);
+    texturesToDispose.push(texture);
     const material = createLabelMaterial(texture);
-    disposables.push(material);
+    materialsToDispose.push(material);
     const label = new THREE.Mesh(labelGeometry, material);
     label.rotation.x = -Math.PI / 2;
     label.position.set(
@@ -235,9 +215,9 @@ export function buildLabels(params: SceneBuilderParams): THREE.PlaneGeometry {
   // Rank labels (1-8) along right edge (black's side)
   RANKS.forEach((rank, i) => {
     const texture = createTextTexture(rank);
-    textureList.push(texture);
+    texturesToDispose.push(texture);
     const material = createLabelMaterial(texture);
-    disposables.push(material);
+    materialsToDispose.push(material);
     const label = new THREE.Mesh(labelGeometry, material);
     label.rotation.x = -Math.PI / 2;
     label.rotation.z = Math.PI;

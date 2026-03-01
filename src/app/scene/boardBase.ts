@@ -12,7 +12,7 @@ import {
 import { createBaseMaterial } from '../materials';
 
 export function buildBoardBase(params: SceneBuilderParams): THREE.ExtrudeGeometry {
-  const { scene, textures, disposables } = params;
+  const { scene, loadedTextures } = params;
 
   const baseWidth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
   const baseDepth = BOARD_SIZE * SQUARE_SIZE + MARGIN * 2;
@@ -31,8 +31,7 @@ export function buildBoardBase(params: SceneBuilderParams): THREE.ExtrudeGeometr
   };
   const boardBaseGeometry = new THREE.ExtrudeGeometry(baseShape, extrudeSettings);
   boardBaseGeometry.rotateX(-Math.PI / 2);
-  const baseMaterial = createBaseMaterial(textures);
-  disposables.push(baseMaterial);
+  const baseMaterial = createBaseMaterial(loadedTextures);
   const base = new THREE.Mesh(boardBaseGeometry, baseMaterial);
   base.position.set(BOARD_CENTER, -SQUARE_HEIGHT / 2 - BASE_HEIGHT - BEVEL_SIZE, BOARD_CENTER);
   base.castShadow = true;
