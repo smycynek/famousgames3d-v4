@@ -4,10 +4,8 @@ import { createWaterMaterial } from '../materials';
 
 export function buildWater(params: SceneBuilderParams): THREE.PlaneGeometry {
   const { scene } = params;
-
   const pedestalHeight = TABLE_HEIGHT * 10;
   const floorY = TABLE_TOP_Y - TABLE_HEIGHT - pedestalHeight;
-
   // Water plane in the distance
   const waterGeometry = new THREE.PlaneGeometry(2000, 2000);
   const waterMaterial = createWaterMaterial();

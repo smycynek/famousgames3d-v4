@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BOARD_SIZE, SQUARE_SIZE, MARGIN, SEAT_Y, BOARD_CENTER } from './sceneBuilder';
-import { ANIMATION_DURATION, PIECE_BASE_SIZE, scalePieceToFit } from '../pieceUtils';
+import { ANIMATION_DURATION, scalePieceToFit } from '../pieceUtils';
 import { createCrownMaterial } from '../materials';
 
 export async function loadCrownModel(
@@ -11,7 +11,7 @@ export async function loadCrownModel(
   try {
     const crownGltf = await loader.loadAsync(`${basePath}crown.gltf`);
     const crownModel = crownGltf.scene;
-    scalePieceToFit(crownModel, PIECE_BASE_SIZE * 2.5);
+    scalePieceToFit(crownModel, 2.5);
     console.log('Loaded crown model');
     return crownModel;
   } catch (error) {
