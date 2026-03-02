@@ -127,11 +127,6 @@ h1 {
   font-family: inherit;
 }
 
-.score {
-  color: #000000;
-  font-family: inherit;
-}
-
 .button-icon {
   width: 1.2rem;
   height: 1.2rem;
@@ -168,7 +163,6 @@ h1 {
   border: 1px solid #000000;
   border-radius: 8px;
   padding: 1.5rem 2rem;
-  border-style: solid;
   color: #000000;
   min-width: 200px;
   text-align: left;
@@ -306,7 +300,6 @@ select:hover {
   border: 1px solid #000000;
   border-radius: 8px;
   padding: 1.5rem 2rem;
-  border-style: solid;
   align-items: center;
   justify-content: center;
   width: 70%;
@@ -318,24 +311,4 @@ select:hover {
 }
 .about-content {
   text-align: left;
-}
-
-.about-ok-btn {
-  border-radius: 4px;
-  border: 2px solid #555;
-  background-color: transparent;
-  color: #000000;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0.25rem 1.5rem;
-  margin: 15px;
-}
-
-.about-ok-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-color: #777;
-}
-
-.about-ok-btn:active {
-  background-color: rgba(0, 0, 0, 0.2);
 }

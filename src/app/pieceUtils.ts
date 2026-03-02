@@ -3,7 +3,7 @@ import { SQUARE_SIZE, SQUARE_HEIGHT } from './scene/sceneBuilder';
 import { createRandomizedPieceMaterial } from './materials';
 
 export const PIECE_TYPES = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'] as const;
-export const PIECE_BASE_SIZE = SQUARE_SIZE * 0.6 * 2 * 0.8; // 60% of square width, scaled
+export const PIECE_BASE_SIZE = SQUARE_SIZE * 0.96;
 export const ANIMATION_DURATION = 1.0; // seconds
 export const KNIGHT_HOP_HEIGHT = 1.5; // how high knights jump
 
